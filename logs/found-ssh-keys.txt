@@ -1,0 +1,2 @@
+/home/jpb/.ssh/authorized_keys
+/root/.ssh/authorized_keys
