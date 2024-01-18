@@ -66,16 +66,22 @@ log_command() {
 # auto_os
 
 #check var names before adding funtion and set to rm instead of cp and add commnd log
-find /  -type f -name "authorized_keys" 2>/dev/null > $logpath/ssh/found-ssh-keys-"$(date "+%H:%M")".txt
-keys_path=$(find /  -type f -name "authorized_keys" 2>/dev/null)
 
-for path in $keys_path
-    do cp "$path" $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
-        log_command "mv $path $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
-        echo "$path:" >> $logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
-        log_command "echo $path: >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
-        sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt >> $logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
-        log_command "sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
-        rm -rf $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
-        log_command "rm -rf $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
-    done
+findrm_keys() {
+
+    find /  -type f -name "authorized_keys" 2>/dev/null > $logpath/ssh/found-ssh-keys-"$(date "+%H:%M")".txt
+    keys_path=$(find /  -type f -name "authorized_keys" 2>/dev/null)
+
+    for path in $keys_path
+        do cp "$path" $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
+            log_command "mv $path $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
+            echo "$path:" >> $logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
+            log_command "echo $path: >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
+            sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt >> $logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
+            log_command "sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
+            rm -rf $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
+            log_command "rm -rf $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
+        done
+
+}
+

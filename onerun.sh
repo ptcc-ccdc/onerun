@@ -23,6 +23,9 @@ log_command() {
     echo "At $(date) the user $USER ran: $1" >> $logpath/ran_commands.txt
 }
 
+echo "do not run this script on a real computer. there is stuff that auto runs CTL+C to end"
+read -r -p
+
 echo "Logs will be stored in $logpath/"
 echo "Looking for ssh authorized_keys..."
 find /  -type f -name "authorized_keys" 2>/dev/null > $logpath/ssh/found-ssh-keys-"$(date "+%H:%M")".txt
@@ -30,6 +33,7 @@ keys_path=$(find /  -type f -name "authorized_keys" 2>/dev/null)
 for path in $keys_path
     do cp "$path" $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
         log_command "mv $path $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
+        echo "Key found: $path"
         echo "$path:" >> $logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
         log_command "echo $path: >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
         sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt >> $logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
