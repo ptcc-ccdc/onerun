@@ -2,8 +2,11 @@
 #source functions
 clear
 users=$(awk -F':' '{ print $1}' /etc/passwd)
-# touch /var/log/onerun-history.txt
 logpath=./logs
+http_ports=(80 443)
+email_ports=(25 587 465 110 995)
+dns_ports=(53)
+
 
 #why not
 pause_script() {
@@ -86,6 +89,17 @@ auto_os () {
 
 }
 
+open_menu () {
+    if [ "$os_type" = "redhat" ]; then
+        redhat_main_menu
+        elif [ "$os_type" = "Debian" ]; then
+        Debian_main_menu
+
+        else echo "Uh you shouldn't see this"
+
+        fi    
+}
+
 redhat_main_menu () {
     echo "OS is" "$os"
     select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords"; do
@@ -102,14 +116,16 @@ redhat_main_menu () {
     done    
 }
 
+
 Debian_main_menu () {
+    clear
     echo "OS is" "$os"
-    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords"; do
+    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall"; do
         case $ubuntu_option in
-            "Remove ssh" ) echo "Will remove ssh "; break;;
+            "Remove ssh" ) deb_remove_ssh;;
             "Change ALL users passwords" ) chnage_all_pass;;
             "Check users that can login" ) echo "Ubuntu 14"; break;;
-            "Check Firwall" ) echo "Check UFW and service ports"; break;;
+            "Check Firewall" ) deb_firewall_check;;
             "Enter services" ) echo "Should auto find service but have option to add man"; break;;
             "users w/o passwords" ) users_no_pass;;
         #  "CentOS 7" ) echo "CentOS 7"; break;;
@@ -121,29 +137,20 @@ Debian_main_menu () {
 
 #start of opeing menus from $os value
 
-open_menu () {
-    if [ "$os_type" = "redhat" ]; then
-        redhat_main_menu
-        elif [ "$os_type" = "Debian" ]; then
-        Debian_main_menu
 
-        else echo "Uh you shouldn't see this"
-
-        fi    
-}
 
 remove_.ssh() {
-    # look at this i dont think im done
+    # look at this i dont think im done test to make sure i think its done jan18 11pm
     for user in $users;
     do echo "Removing $user .ssh dir"
-        log_command "rm -rf $user)"
-        rm -rf /home/$user/.ssh 
+        log_command "rm -rf $user/.ssh)"
+        rm -rf /home/"$user"/.ssh 
     done
 }
 
 deb_remove_ssh_diabled () {
     echo "this will completly remove ssh and prevent future installs"
-    echo "This will also most likey remove any ssh keys so run "Check ssh keys" if you havent before"
+    echo "This will also most likey remove any ssh keys so run "Check ssh keys" if you havent before (check logs in $logpath/ssh)"
     echo "removing all users in passwd list .ssh"
     remove_.ssh
     read -p -r "Press enter to remove SSH"
@@ -164,6 +171,8 @@ deb_remove_ssh_diabled () {
     log_command "echo 'Package: openssh-server' | sudo tee -a /etc/apt/preferences.d/block-ssh > /dev/null"
     log_command "echo 'Pin: version *' | sudo tee -a /etc/apt/preferences.d/block-ssh > /dev/null"
     log_command "echo 'Pin-Priority: -1' | sudo tee -a /etc/apt/preferences.d/block-ssh > /dev/null"
+    clear
+    open_menu      
 }
 
 red_remove_ssh() {
@@ -195,6 +204,8 @@ red_remove_ssh() {
     echo "Adding 'exclude=openssh*' to /etc/yum.conf"
     log_command "echo 'exclude=openssh*' >> /etc/yum.conf"
     echo 'exclude=openssh*' >> /etc/yum.conf
+    clear
+    open_menu       
 }
 
 users_no_pass() {
@@ -232,6 +243,119 @@ chnage_all_pass() {
         done
     else clear
         open_menu
+    fi
+}
+
+deb_firewall_check() {
+    if command -v ufw >/dev/null 2>&1; then
+        echo "UFW installed would you like to reset and open set ports or custom ports?
+    1. set ports
+    2. custom ports
+    Enter to skip"
+        read -r ufw_set
+        if [ "$ufw_set" = 1 ]; then
+            echo "Restting UFW..."
+            sudo ufw --force reset
+            log_command "sudo ufw --force reset"
+            echo "Enableing UFW"
+            sudo ufw enable
+            log_command "sudo ufw enable"   
+            echo "Setting default deny incoming and default allow outgoing"         
+            sudo ufw default deny incoming
+            log_command "sudo ufw default deny incoming"
+            sudo ufw default allow outgoing
+            log_command "sudo ufw default allow outgoing"
+            clear
+            echo "enter the number that you want to allow on the firewall"
+            select os in "HTTP" "EMAIL" "DNS"; do
+                case $os in
+                    "HTTP" ) sudo ufw allow "${http_ports[0]}","${http_ports[1]}"; log_command "sudo ufw allow ${http_ports[0]},${http_ports[1]}"; open_menu;;
+                    "EMAIL" ) sudo  ufw allow "${email_ports[0]}","${email_ports[1]}","${email_ports[2]}","${email_ports[3]}"."${email_ports[4]}"; log_command "sudo ufw allow ${email_ports[0]},{http_ports[1]},${email_ports[2]},${email_ports[3]}.${email_ports[4]}"; open_menu;;      
+                    "DNS" ) sudo ufw allow "${dns_ports[0]}"; log_command "sudo ufw allow ${dns_ports[0]}"; open_menu;;
+                    * ) echo "Invalid selection";;
+                esac
+            done
+            clear
+            open_menu                
+
+        elif [ "$ufw_set" = "2" ]; then
+            clear
+            echo "Manual mode"
+            echo "Please enter ports divided by spaces. 80 443..."
+            read -r -a cust_ports
+            clear
+            echo "allowing ports ${cust_ports[*]}"
+            for port in "${cust_ports[@]}"; do
+                sudo ufw allow "$port"
+                log_command "sudo ufw allow $port"
+                done
+            sudo ufw enable
+            clear
+            open_menu        
+        else
+            clear
+            open_menu               
+
+        fi
+        
+    else 
+        echo "UFW is not installed"
+        echo "Would you like to install UFW, enable and set ports now?"
+        echo "Enter 1 to install or enter to skip"
+        read -r ufw_ins
+        if [ "$ufw_ins" = "1" ]; then
+            echo "Installing UFW with apt now..."
+            sudo apt install ufw -y
+            log_command "sudo apt install ufw -y"
+            echo "Restting UFW..."
+            sudo ufw --force reset
+            log_command "sudo ufw --force reset"
+            echo "Enableing UFW"
+            sudo ufw enable
+            log_command "sudo ufw enable"   
+            echo "Setting default deny incoming and default allow outgoing"         
+            sudo ufw default deny incoming
+            log_command "sudo ufw default deny incoming"
+            sudo ufw default allow outgoing
+            log_command "sudo ufw default allow outgoing"
+            clear
+            echo "UFW installed and enabled would you like to open set ports or custom ports?
+    1. set ports
+    2. custom ports
+    Enter to skip"
+            read -r deb_ports
+            if [ "$deb_ports" = "1" ]; then
+                echo "enter the number that you want to allow on the firewall"
+                select os in "HTTP" "EMAIL" "DNS"; do
+                    case $os in
+                        "HTTP" ) sudo ufw allow "${http_ports[0]}","${http_ports[1]}"; log_command "sudo ufw allow ${http_ports[0]},${http_ports[1]}"; open_menu;;
+                        "EMAIL" ) sudo  ufw allow "${email_ports[0]}","${email_ports[1]}","${email_ports[2]}","${email_ports[3]}"."${email_ports[4]}"; log_command "sudo ufw allow ${email_ports[0]},{http_ports[1]},${email_ports[2]},${email_ports[3]}.${email_ports[4]}"; open_menu;;      
+                        "DNS" ) sudo ufw allow "${dns_ports[0]}"; log_command "sudo ufw allow ${dns_ports[0]}"; open_menu;;
+                        * ) echo "Invalid selection";;
+                    esac
+                done
+                clear
+                open_menu                
+
+            elif [ "$deb_ports" = "2" ]; then
+                clear
+                echo "Manual mode"
+                echo "Please enter ports divided by spaces. 80 443..."
+                read -r -a cust_ports
+                clear
+                echo "allowing ports ${cust_ports[*]}"
+                for port in "${cust_ports[@]}"; do
+                    sudo ufw allow "$port"
+                    log_command "sudo ufw allow $port"
+                    done
+                sudo ufw enable
+                clear
+                open_menu
+            else
+                clear
+                open_menu                
+            fi
+        fi
     fi
 }
 

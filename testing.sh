@@ -143,9 +143,9 @@ deb_firewall_check() {
                 echo "enter the number that you want to allow on the firewall"
                 select os in "HTTP" "EMAIL" "DNS"; do
                     case $os in
-                        "HTTP" ) sudo ufw allow "${http_ports[0]}","${http_ports[1]}"; log_command "sudo ufw allow ${http_ports[0]},${http_ports[1]}";  break;;
-                        "EMAIL" ) sudo  ufw allow "${email_ports[0]}","${email_ports[1]}","${email_ports[2]}","${email_ports[3]}"."${email_ports[4]}"; log_command "sudo ufw allow ${email_ports[0]},{http_ports[1]},${email_ports[2]},${email_ports[3]}.${email_ports[4]}"; break;;      
-                        "DNS" ) sudo ufw allow "${dns_ports[0]}"; log_command "sudo ufw allow ${dns_ports[0]}"; break;;
+                        "HTTP" ) sudo ufw allow "${http_ports[0]}","${http_ports[1]}"; log_command "sudo ufw allow ${http_ports[0]},${http_ports[1]}"; open_menu;;
+                        "EMAIL" ) sudo  ufw allow "${email_ports[0]}","${email_ports[1]}","${email_ports[2]}","${email_ports[3]}"."${email_ports[4]}"; log_command "sudo ufw allow ${email_ports[0]},{http_ports[1]},${email_ports[2]},${email_ports[3]}.${email_ports[4]}"; open_menu;;      
+                        "DNS" ) sudo ufw allow "${dns_ports[0]}"; log_command "sudo ufw allow ${dns_ports[0]}"; open_menu;;
                         * ) echo "Invalid selection";;
                     esac
                 done
@@ -155,12 +155,18 @@ deb_firewall_check() {
                 echo "Manual mode"
                 echo "Please enter ports divided by spaces. 80 443..."
                 read -r -a cust_ports
+                clear
                 echo "allowing ports ${cust_ports[*]}"
                 for port in "${cust_ports[@]}"; do
                     sudo ufw allow "$port"
                     log_command "sudo ufw allow $port"
                     done
                 sudo ufw enable
+                clear
+                open_menu
+            else
+                clear
+                open_menu                
             fi
         fi
     fi
