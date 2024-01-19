@@ -112,6 +112,7 @@ email_ports=(25 587 465 110 995)
 dns_ports=(53)
 
 
+
 deb_firewall_check() {
     if command -v ufw >/dev/null 2>&1; then
         echo "UFW is installed"
@@ -120,7 +121,7 @@ deb_firewall_check() {
         echo "Would you like to install UFW, enable and set ports now?"
         echo "Enter 1 to install or enter to skip"
         read -r ufw_in
-        if [ $ufw_in = "1" ]; then
+        if [ "$ufw_in" = "1" ]; then
             echo "Installing UFW with apt now..."
             sudo apt install ufw -y
             log_command "sudo apt install ufw -y"
@@ -132,11 +133,11 @@ deb_firewall_check() {
             log_command "sudo ufw default deny incoming"
             sudo ufw default allow outgoing
             log_command "sudo ufw default allow outgoing"
-
+            clear
             echo "UFW installed and enabled would you like to open set ports or custom ports?
-            1. set ports
-            2. custom ports
-            Enter to skip"
+    1. set ports
+    2. custom ports
+    Enter to skip"
             read -r deb_ports
             if [ "$deb_ports" = "1" ]; then
                 echo "enter the number that you want to allow on the firewall"
@@ -150,6 +151,7 @@ deb_firewall_check() {
                 done
 
             elif [ "$deb_ports" = "2" ]; then
+                clear
                 echo "Manual mode"
                 echo "Please enter ports divided by spaces. 80 443..."
                 read -r -a cust_ports
