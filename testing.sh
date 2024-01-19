@@ -1,4 +1,10 @@
-
+#!/bin/bash
+clear
+mkdir ./logs
+logpath=./logs
+log_command() {
+    echo "At $(date) the user $USER ran: $1" >> $logpath/ran_commands.txt
+}
 
 #check cron tab
 
@@ -81,24 +87,83 @@
 
 
 
-findrm_keys() {
-    logpath=./logs
-    log_command() {
-        echo "At $(date) the user $USER ran: $1" >> $logpath/ran_commands.txt
-    }
-    find /  -type f -name "authorized_keys" 2>/dev/null > $logpath/ssh/found-ssh-keys-"$(date "+%H:%M")".txt
-    keys_path=$(find /  -type f -name "authorized_keys" 2>/dev/null)
+# findrm_keys() {
+#     logpath=./logs
+#     log_command() {
+#         echo "At $(date) the user $USER ran: $1" >> $logpath/ran_commands.txt
+#     }
+#     find /  -type f -name "authorized_keys" 2>/dev/null > $logpath/ssh/found-ssh-keys-"$(date "+%H:%M")".txt
+#     keys_path=$(find /  -type f -name "authorized_keys" 2>/dev/null)
 
-    for path in $keys_path
-        do cp "$path" $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
-            log_command "mv $path $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
-            echo "$path:" >> $logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
-            log_command "echo $path: >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
-            sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt >> $logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
-            log_command "sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
-            rm -rf $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
-            log_command "rm -rf $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
-        done
+#     for path in $keys_path
+#         do cp "$path" $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
+#             log_command "mv $path $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
+#             echo "$path:" >> $logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
+#             log_command "echo $path: >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
+#             sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt >> $logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
+#             log_command "sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
+#             rm -rf $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
+#             log_command "rm -rf $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
+#         done
 
+# }
+http_ports=(80 443)
+email_ports=(25 587 465 110 995)
+dns_ports=(53)
+
+
+
+deb_firewall_check() {
+    if command -v ufw >/dev/null 2>&1; then
+        echo "UFW is installed"
+    else 
+        echo "UFW is not installed"
+        echo "Would you like to install UFW, enable and set ports now?"
+        echo "Enter 1 to install or enter to skip"
+        read -r ufw_in
+        if [ "$ufw_in" = "1" ]; then
+            echo "Installing UFW with apt now..."
+            sudo apt install ufw -y
+            log_command "sudo apt install ufw -y"
+            sudo ufw --force reset
+            log_command "sudo ufw --force reset"
+            sudo ufw enable
+            log_command "sudo ufw enable"            
+            sudo ufw default deny incoming
+            log_command "sudo ufw default deny incoming"
+            sudo ufw default allow outgoing
+            log_command "sudo ufw default allow outgoing"
+            clear
+            echo "UFW installed and enabled would you like to open set ports or custom ports?
+    1. set ports
+    2. custom ports
+    Enter to skip"
+            read -r deb_ports
+            if [ "$deb_ports" = "1" ]; then
+                echo "enter the number that you want to allow on the firewall"
+                select os in "HTTP" "EMAIL" "DNS"; do
+                    case $os in
+                        "HTTP" ) sudo ufw allow "${http_ports[0]}","${http_ports[1]}"; log_command "sudo ufw allow ${http_ports[0]},${http_ports[1]}";  break;;
+                        "EMAIL" ) sudo  ufw allow "${email_ports[0]}","${email_ports[1]}","${email_ports[2]}","${email_ports[3]}"."${email_ports[4]}"; log_command "sudo ufw allow ${email_ports[0]},{http_ports[1]},${email_ports[2]},${email_ports[3]}.${email_ports[4]}"; break;;      
+                        "DNS" ) sudo ufw allow "${dns_ports[0]}"; log_command "sudo ufw allow ${dns_ports[0]}"; break;;
+                        * ) echo "Invalid selection";;
+                    esac
+                done
+
+            elif [ "$deb_ports" = "2" ]; then
+                clear
+                echo "Manual mode"
+                echo "Please enter ports divided by spaces. 80 443..."
+                read -r -a cust_ports
+                echo "allowing ports ${cust_ports[*]}"
+                for port in "${cust_ports[@]}"; do
+                    sudo ufw allow "$port"
+                    log_command "sudo ufw allow $port"
+                    done
+                sudo ufw enable
+            fi
+        fi
+    fi
 }
 
+deb_firewall_check
