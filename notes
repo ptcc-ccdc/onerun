@@ -1,0 +1,138 @@
+#Debain based machies only
+
+#set name servers
+sudo nano /etc/resolvconf/resolv.conf.d/base
+nameserver 1.1.1.1
+nameserver 1.0.0.1
+sudo resolvconf -u
+
+nano /etc/network/interfaces
+
+auto eth0 #name of interface 
+iface eth0 inet static
+    address 192.168.50.211 # replace with ip
+    netmask 255.255.255.0
+    gateway 192.168.50.1  # replace with gateway IP
+
+sudo ifdown eth0 && sudo ifup eth0
+
+# should let you run apt update after 
+sudo apt update ; sudo apt-get install apt-transport-https ca-certificates -y ; sudo update-ca-certificates 
+
+
+#network back up script
+
+#!/bin/bash
+
+# Backup the original /etc/network/interfaces file
+sudo cp /etc/network/interfaces /etc/network/interfaces.bak
+
+# Define the correct network configuration with a static IP address
+NETWORK_CONFIGURATION="auto lo\niface lo inet loopback\n\nauto eth0\niface eth0 inet static\naddress 192.168.50.211\nnetmask 255.255.255.0\ngateway 192.168.50.1\ndns-nameservers 1.1.1.1 1.0.0.1"
+
+# Clear the /etc/network/interfaces file and write the correct network configuration
+echo -e $NETWORK_CONFIGURATION | sudo tee /etc/network/interfaces > /dev/null
+
+# Set the file permissions so that it cannot be modified
+sudo chattr +i /etc/network/interfaces
+
+# Verify the changes
+cat /etc/network/interfaces
+lsattr /etc/network/interfaces
+
+
+
+service --status-all | sed 's/\[ + \]//g; s/\[ - \]//g' > formated-services.txt && sed -i 's/^[ \t]*//' formated-services.txt
+
+check users in sudo group
+
+grep 'sudo' /etc/group
+
+grep 'root' /etc/group
+
+Linux bash script check list
+
+Remove SSH and prevent installation AUTO
+Change ALL user passwords AUTO
+Change SPECIFIC user(s) password #
+Change ALL user bash to prevent login AUTO
+Change user(s) bash to prevent login
+Show all users that can login AUTO (make text file with authurized users)
+Disable loading any additional modules (things go breeaky when done did)
+Check/kill backdoor connections (ps aux | grep sh, kill -9 " + pid)
+Check for SSH keys (/etc/ssh/sshd_config "AuthorizedKeysFile")
+set sudoers file to only allow one user to have sudo
+check firewall
+check for services
+compare running services to “default services’
+check all users cron tabs
+false binarys
+weird dirs such as “…”
+back up important dirs (nginx apache mysql)
+check PAM
+Limit vi vim to root user or remove editor
+other stuff to look at
+
+check apt sources.list
+Look in to PAM
+Check Processes:
+
+Use the commands ps aux | grep bash or ps aux | grep sh to identify reverse shell connections.
+Kill Suspicious Processes:
+If any suspicious processes are found, kill them using kill -9 <PID> (replace <PID> with the process ID).
+Check Established Connections:
+Use the command ss to check for established connections, and look for "ESTAB" connections from unfamiliar IPs.
+Check Allowed Ports:
+Check allowed ports using ufw status or firewall-cmd --list-ports.
+Block Suspicious Ports:
+Block the ports associated with suspicious connections using either:
+ufw block <PORT> followed by ufw reload.
+sudo firewall-cmd --remove-port=<PORT>/<PORT_TYPE> followed by sudo firewall-cmd --runtime-to-permanent.
+
+
+Check these bins because they have SUID and Rev Shell (GTFO bins)
+
+jjs
+jrunscript
+julia
+nc
+node
+openssl
+python
+rview
+rvim
+socat
+view
+vim
+vimdiff
+gdb
+
+
+
+
+auto run and log nicley 
+    check ssh keys 
+    remove ssh server (DONE)
+    remove all users .ssh (log if ssh key was found ) 
+    check werid dirs
+    check firewall (install if need be)
+    open ports based on ports added via script arg (-p 80 -p 25...)
+    make back up of common dirs and store securly (LOG where it goes!)
+    auto start tailing import logs to anotehr tty? [command] > /dev/tty2?
+        (https://unix.stackexchange.com/questions/170063/start-a-process-on-a-different-tty)
+            you can add more ttys by sudo systemctl start getty@ttyN.service N=tty number not in use
+    check for werid users 
+    make sure perms are set properly for major bins
+    check all users cron tabs
+    commpare services from default install of os to currnt running os
+    check for waek passwords in passwd
+    check users in group with sudo privs
+    check shadow
+    backup and replace sudoers file with known good
+    
+
+
+
+
+usefull commands:
+    passwd -a (-S?)

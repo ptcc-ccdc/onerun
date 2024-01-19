@@ -1,8 +1,20 @@
 
-logpath=./logs
-log_command() {
-    echo "At $(date) the user $USER ran: $1" >> $logpath/ran_commands.txt
-}
+
+#check cron tab
+
+
+#back up network config
+
+#disable admin log (php)
+
+#incidnet reports (good pdf? summary, affected vms, evidence and proff of removal)
+
+#MYSQL back up and setup
+
+
+#fix
+
+
 # users=$(awk -F':' '{ print $1}' /etc/passwd)
 # echo $users
 
@@ -67,8 +79,13 @@ log_command() {
 
 #check var names before adding funtion and set to rm instead of cp and add commnd log
 
-findrm_keys() {
 
+
+findrm_keys() {
+    logpath=./logs
+    log_command() {
+        echo "At $(date) the user $USER ran: $1" >> $logpath/ran_commands.txt
+    }
     find /  -type f -name "authorized_keys" 2>/dev/null > $logpath/ssh/found-ssh-keys-"$(date "+%H:%M")".txt
     keys_path=$(find /  -type f -name "authorized_keys" 2>/dev/null)
 
