@@ -1,0 +1,14 @@
+completely AI made!
+
+
+location for admin login /var/www/html/presta/js/admin/login.js
+
+function doAjaxLogin(redirect) {
+    // Disable the login button
+    $('button[type=submit]').prop('disabled', false);
+
+    // Display a message
+    $('#error').html('Login is in maintenance mode').show();
+
+    // Rest of your code...
+}
