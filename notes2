@@ -1,0 +1,86 @@
+how you can configure `iptables`, `firewalld`, and `ufw` to allow localhost access to MySQL on port 3306:
+
+**For iptables:**
+1. Allow only localhost (127.0.0.1) to connect to MySQL (port 3306)¹⁴:
+    ```bash
+    iptables -A INPUT -p tcp -s localhost --dport 3306 -j ACCEPT
+    iptables -A OUTPUT -p tcp -s localhost --dport 3306 -j ACCEPT
+    iptables -A INPUT -p tcp --dport 3306 -j DROP
+    iptables -A OUTPUT -p tcp --dport 3306 -j DROP
+    ```
+
+**For firewalld:**
+1. Allow only localhost to connect to MySQL²:
+    ```bash
+    firewall-cmd --permanent --zone=public --add-rich-rule='
+      rule family="ipv4"
+      source address="127.0.0.1/32"
+      port protocol="tcp" port="3306" accept'
+    firewall-cmd --reload
+    ```
+
+**For ufw (Uncomplicated Firewall):**
+1. Allow only localhost to connect to MySQL²:
+    ```bash
+    ufw allow from 127.0.0.1 to any port 3306
+    ```
+
+**MySQL Configuration:**
+1. You may also need to configure MySQL to listen on localhost. This can be done by modifying the `bind-address` directive in the MySQL configuration file (usually `/etc/my.cnf` or `/etc/mysql/my.cnf`)⁵:
+    ```bash
+    [mysqld]
+    bind-address = 127.0.0.1
+    ```
+
+Please replace `<your-port>` with the actual port number you want to allow. 
+
+Remember to save your changes. Depending on your Linux distribution, you may use²:
+- On Debian/Ubuntu:
+    ```bash
+    iptables-save > /etc/iptables/rules.v4
+    ```
+- On RedHat/CentOS:
+    ```bash
+    service iptables save
+    ```
+
+
+
+
+(1) Restricting MySQL 3306 port to localhost with IPTABLES. https://stackoverflow.com/questions/11001368/restricting-mysql-3306-port-to-localhost-with-iptables.
+(2) How to Allow Remote Connections to MySQL Database Server. https://linuxize.com/post/mysql-remote-access/.
+(3) Linux Iptables Allow MYSQL request on port 3306 - nixCraft. https://www.cyberciti.biz/tips/linux-iptables-18-allow-mysql-server-incoming-request.html.
+(4) ubuntu - MySQL port 3306 closed even with ufw inactive and bind-address .... https://stackoverflow.com/questions/58659016/mysql-port-3306-closed-even-with-ufw-inactive-and-bind-address-and-skip-networki.
+(5) How to Allow Remote MySQL Connections - phoenixNAP. https://phoenixnap.com/kb/mysql-remote-connection.
+
+
+
+how you can block port 22 (SSH) on iptables, firewalld, and ufw:
+
+For iptables:
+
+Block incoming and outgoing traffic on port 2212:
+iptables -A INPUT -p tcp --dport 22 -j DROP
+iptables -A OUTPUT -p tcp --dport 22 -j DROP
+
+For firewalld:
+
+Remove port 22 from the list of allowed ports3:
+firewall-cmd --remove-port=22/tcp --permanent
+firewall-cmd --remove-port=22/udp --permanent
+firewall-cmd --reload
+
+
+(1) iptables - Block IP if it connects to port 22 - Unix & Linux Stack Exchange. https://unix.stackexchange.com/questions/267006/block-ip-if-it-connects-to-port-22.
+(2) IPTABLES VS FIREWALLD | Unixmen. https://www.unixmen.com/iptables-vs-firewalld/.
+(3) How to Block a Port Using a Firewall in Linux - Linux Shell Tips. https://www.ubuntumint.com/block-port-in-linux/.
+(4) UFW Essentials: Common Firewall Rules and Commands. https://www.digitalocean.com/community/tutorials/ufw-essentials-common-firewall-rules-and-commands.
+(5) Linux Basics: Understanding and Configuring Firewall Rules with .... https://purevoltage.com/blog/linux-basics-understanding-and-configuring-firewall-rules-with-iptables-ufw-and-firewalld/.
+
+
+
+
+you can disable the root user (usermod -d root) and still use sudo -i
+
+
+remove sudo group and make a new group to add only main user to?
