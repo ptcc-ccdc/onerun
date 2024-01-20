@@ -44,6 +44,7 @@ lsattr /etc/network/interfaces
 
 service --status-all | sed 's/\[ + \]//g; s/\[ - \]//g' > formated-services.txt && sed -i 's/^[ \t]*//' formated-services.txt
 
+
 check users in sudo group
 
 grep 'sudo' /etc/group
@@ -115,8 +116,8 @@ auto run and log nicley
     remove ssh server (DONE)
     remove all users .ssh (log if ssh key was found ) 
     check werid dirs
-    check firewall (install if need be)
-    open ports based on ports added via script arg (-p 80 -p 25...)
+    (zayne script)check firewall (install if need be)
+        open ports based on ports added via script arg (-p 80 -p 25...)
     make back up of common dirs and store securly (LOG where it goes!)
     auto start tailing import logs to anotehr tty? [command] > /dev/tty2?
         (https://unix.stackexchange.com/questions/170063/start-a-process-on-a-different-tty)
@@ -129,10 +130,48 @@ auto run and log nicley
     check users in group with sudo privs
     check shadow
     backup and replace sudoers file with known good
-    
+    Disable Unwanted SUID and SGID Binaries
 
 
 
 
 usefull commands:
     passwd -a (-S?)
+
+#/etc/sudoers
+
+Defaults        env_reset
+Defaults        mail_badpass
+Defaults        secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+
+root    ALL=(ALL:ALL) ALL
+%sudo   ALL=(ALL:ALL) ALL    
+
+
+
+configuring ip tables for cent os6 or just iptables
+
+
+# Chatgpt
+
+# Flush all current rules from iptables
+iptables -F
+
+# Set default chain policies
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT ACCEPT
+
+# Allow incoming traffic on ports 8000, 8080, and 9000
+iptables -A INPUT -p tcp --dport 8000 -j ACCEPT
+iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
+iptables -A INPUT -p tcp --dport 9000 -j ACCEPT
+
+# Allow traffic on loopback device
+iptables -A INPUT -i lo -j ACCEPT
+
+# Allow established connections
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# Save settings
+/sbin/service iptables save
