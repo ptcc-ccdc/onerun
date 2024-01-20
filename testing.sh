@@ -254,7 +254,7 @@ backup() {
     echo "Please enter from the list of predesited dir or enter the path to the folder you want backed up: /var/www/html..."
     select backupdir in "NGINX" "Apache" "MySQL" "Splunk" "NTP" "DNS" "SMTP" "IMAP"; do
         case $backupdir in
-            "NGINX" ) echo "Backing up NGINX config and data dir ""/usr/share/nginx/html /etc/nginx"" "; mkdir -p $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"; cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"; echo "This is what was ran: cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")">> $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"/nginx-backup-log.txt; open_menu;;
+            "NGINX" ) echo "Backing up NGINX config and data dir ""/usr/share/nginx/html /etc/nginx"" "; mkdir -p $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"; cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"; echo "This is what was ran: cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")">> $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"/nginx-backup-log.txt; log_command "mkdir -p $backuppath/nginx/ngix-backup-$(date "+%H:%M")"; log_command "cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")"; open_menu;;
             "Apache" ) os="Apache"; os_type="web server"; break;;
             "MySQL" ) os="MySQL"; os_type="database server"; break;;
             "Splunk" ) os="Splunk"; os_type="log management"; break;;
@@ -268,5 +268,4 @@ backup() {
 }
 backup
 
-log_command "mkdir -p $backuppath/nginx/ngix-backup-$(date "+%H:%M")"
-log_command "cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")"
+log_command "mkdir -p $backuppath/nginx/ngix-backup-$(date "+%H:%M")"; log_command "cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")";

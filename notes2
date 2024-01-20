@@ -84,3 +84,67 @@ you can disable the root user (usermod -d root) and still use sudo -i
 
 
 remove sudo group and make a new group to add only main user to?
+
+
+
+where service stores its configuration and data:
+
+1. **NGINX**: The main configuration file is typically located at `/etc/nginx/nginx.conf`³⁵. However, the exact location can depend on how NGINX was installed³⁵.
+
+2. **Apache**: Apache's configuration files are usually located at `/etc/apache2/apache2.conf` or `/etc/httpd/httpd.conf`, depending on the distribution⁵. The data for websites run with Apache is typically located in `/var/www`⁷.
+
+3. **MySQL**: By default, MySQL stores its database files in `/var/lib/mysql`¹⁷. The main configuration file is typically located at `/etc/mysql/mysql.conf.d/mysqld.cnf`¹⁷.
+
+4. **Splunk**: The main configuration files for Splunk are located in the `$SPLUNK_HOME/etc/system/default` directory¹. Splunk data is stored in the directory specified in the `partitions` options in the `imapd.conf` file²⁶.
+
+5. **NTP**: The main configuration file for NTP is located at `/etc/ntp.conf`¹¹.
+
+6. **DNS (BIND)**: The main configuration files for BIND are located in the `/etc/bind` directory²¹. The data is stored in the directory specified in the `directory` option in the `named.conf` file²¹.
+
+7. **IMAP (Dovecot)**: The main configuration files for Dovecot are located in the `/etc/dovecot` directory²⁶. The data is stored in the directory specified in the `mail_location` option in the `dovecot.conf` file²⁶.
+
+8. **SMTP (Postfix)**: The main configuration files for Postfix are located in the `/etc/postfix` directory³⁴. The data is stored in the mail queue directory, which is `/var/spool/postfix` by default³⁴.
+
+
+(1) Understanding the Nginx Configuration File Structure and Configuration .... https://www.digitalocean.com/community/tutorials/understanding-the-nginx-configuration-file-structure-and-configuration-contexts.
+(2) How to Find Your Apache Configuration Folder - How-To Geek. https://www.howtogeek.com/devops/how-to-find-your-apache-configuration-folder/.
+(3) How to configure an Apache web server | Opensource.com. https://opensource.com/article/18/2/apache-web-server-configuration.
+(4) Where Does MySQL Store Its Database Files | Baeldung on Linux. https://www.baeldung.com/linux/mysql-database-files-location.
+(5) Configuration file directories - Splunk Documentation. https://docs.splunk.com/Documentation/Splunk/9.1.2/Admin/Configurationfiledirectories.
+(6) Chapter 1. Configuring and maintaining a Dovecot IMAP and POP3 server .... https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html/deploying_mail_servers/configuring-and-maintaining-a-dovecot-imap-and-pop3-server_deploying-mail-servers.
+(7) 22.9. Understanding the ntpd Configuration File Red Hat Enterprise .... https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/6/html/deployment_guide/s1-understanding_the_ntpd_configuration_file.
+(8) Linux DNS server BIND configuration. https://linuxconfig.org/linux-dns-server-bind-configuration.
+(9) How to Configure Postfix to Use External SMTP | phoenixNAP KB. https://phoenixnap.com/kb/postfix-smtp.
+(10) Configure index storage - Splunk Documentation. https://docs.splunk.com/Documentation/Splunk/9.1.2/Indexer/Configureindexstorage.
+(11) Splunk Backup: What are Your Options? - Cloudian. https://cloudian.com/guides/splunk-big-data/splunk-backup-what-are-your-options/.
+(12) Manage DDSS self storage locations - Splunk Documentation. https://docs.splunk.com/Documentation/SplunkCloud/9.1.2308/Config/ManageDDSSlocations.
+(13) How To Configure the Apache Web Server on an Ubuntu or Debian VPS. https://www.digitalocean.com/community/tutorials/how-to-configure-the-apache-web-server-on-an-ubuntu-or-debian-vps.
+(14) Where does Apache server store its configuration files?. https://www.cyberciti.biz/tips/where-does-apache-server-store-its-configuration-files.html.
+(15) Web Files On A Linux Apache Server: /var/www/html Directory. https://www.systranbox.com/where-are-web-files-stored-on-linux-apache/.
+(16) Chapter 19. Configuring NTP Using ntpd Red Hat Enterprise Linux 7 | Red .... https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/system_administrators_guide/ch-configuring_ntp_using_ntpd.
+(17) How to Install and Configure NTP on Linux | TimeTools Ltd. https://timetoolsltd.com/ntp/how-to-install-and-configure-ntp-on-linux/.
+(18) NTP Configuration in CentOS - GeeksforGeeks. https://www.geeksforgeeks.org/ntp-configuration-in-centos/.
+(19) How do I setup a local NTP server? - Ask Ubuntu. https://askubuntu.com/questions/14558/how-do-i-setup-a-local-ntp-server.
+(20) How to find out the location of currently used MySQL configuration file .... https://stackoverflow.com/questions/3270326/how-to-find-out-the-location-of-currently-used-mysql-configuration-file-in-linux.
+(21) How To Move a MySQL Data Directory to a New Location on Ubuntu 20.04. https://www.digitalocean.com/community/tutorials/how-to-move-a-mysql-data-directory-to-a-new-location-on-ubuntu-20-04.
+(22) Where Are MySQL Files Stored in a UNIX / Linux Harddisk. https://www.cyberciti.biz/faq/mysql-datadir-files-stored-unix-linux/.
+(23) How to Change default MySQL data Directory in Linux - TecAdmin. https://tecadmin.net/change-default-mysql-data-directory-in-linux/.
+(24) How to use the Linux BIND command to install and configure DNS. https://www.redhat.com/sysadmin/dns-configuration-introduction.
+(25) DNS Caching in Linux | Baeldung on Linux. https://bing.com/search?q=DNS+service+config+and+data+storage+location+on+Linux.
+(26) How to change DNS on Linux [Step by Step Guide]. https://www.linuxfordevices.com/tutorials/linux/change-dns-on-linux.
+(27) How to Run Your Own DNS Server on Your Local Network. https://www.howtogeek.com/devops/how-to-run-your-own-dns-server-on-your-local-network/.
+(28) DNS Caching in Linux | Baeldung on Linux. https://www.baeldung.com/linux/configure-dns-caching.
+(29) How to build a local IMAP server - Linux.com. https://www.linux.com/news/how-build-local-imap-server/.
+(30) Location of ini/config files in linux/unix? - Stack Overflow. https://stackoverflow.com/questions/1024114/location-of-ini-config-files-in-linux-unix.
+(31) Quickstart Guide — Cyrus IMAP 3.8.1 documentation. https://www.cyrusimap.org/quickstart.html.
+(32) Mail Storage Location - Help - Mailspring Community. https://community.getmailspring.com/t/mail-storage-location/299.
+(33) Setting up an SMTP Server on Linux - ultimate guide - GMass. https://www.gmass.co/blog/smtp-server-linux/.
+(34) Setting Up and Configuring a Linux Mail Server - Plesk. https://www.plesk.com/blog/various/setting-up-and-configuring-a-linux-mail-server/.
+(35) linux - How can I see settings of the email server? - Unix & Linux .... https://unix.stackexchange.com/questions/157880/how-can-i-see-settings-of-the-email-server.
+(36) Nginx configuration location - Stack Overflow. https://stackoverflow.com/questions/33078633/nginx-configuration-location.
+(37) How to Find Your Nginx Configuration Folder - How-To Geek. https://www.howtogeek.com/devops/how-to-find-your-nginx-configuration-folder/.
+(38) How to Configure Nginx - Server and Location Blocks Explained. https://bitlaunch.io/blog/how-to-configure-nginx/.
+(39) undefined. http://127.0.0.1.
+(40) undefined. http://www.securityspace.com/s_survey/data/man.201907/mxsurvey.html.
+(41) Getty. https://media.gettyimages.com/id/1244811487/photo/in-this-photo-illustration-the-mysql-logo-is-displayed-on-a-smartphone-screen.jpg?b=1&s=612x612&w=0&k=20&c=v69nwDIHpuRT_MRv2Sbt4OOjD_bdzg2qqeGe_GXQKxs=.
+(42) Getty. https://media.gettyimages.com/id/1194497527/photo/facade-with-logo-at-office-of-software-company-splunk-on-santana-row-in-the-silicon-valley.jpg?b=1&s=612x612&w=0&k=20&c=OXMi9v_FCrcnl-xU8x4wAEZ-erBdViS0fvlMmhdw_s4=.
