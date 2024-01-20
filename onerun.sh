@@ -2,10 +2,11 @@
 #source functions
 clear
 users=$(awk -F':' '{ print $1}' /etc/passwd)
+mkdir -p ./backups ./logs
 logpath=./logs
 backuppath=./backups
 http_ports=(80 443)
-email_ports=(25 587 465 110 995)
+email_ports=(25 587 465 110 995 143)
 dns_ports=(53)
 
 
@@ -29,6 +30,8 @@ log_command() {
 
 echo "do not run this script on a real computer. there is stuff that auto runs CTL+C to end"
 read -r -p
+
+log_command "mkdir -p ./backups ./logs"
 
 echo "Logs will be stored in $logpath/"
 echo "Looking for ssh authorized_keys..."
@@ -123,7 +126,7 @@ redhat_main_menu () {
 Debian_main_menu () {
     clear
     echo "OS is" "$os"
-    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh"; do
+    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs"; do
         case $ubuntu_option in
             "Remove ssh" ) deb_remove_ssh;;
             "Change ALL users passwords" ) change_all_pass; open_menu;;
@@ -132,6 +135,7 @@ Debian_main_menu () {
             "Enter services" ) echo "Should auto find service but have option to add man"; break;;
             "users w/o passwords" ) users_no_pass;;
             "Remove .ssh" ) remove_.ssh; open_menu;;
+            "Backup dirs" ) backup; open_menu;;
         #  "CentOS 7" ) echo "CentOS 7"; break;;
             * ) echo "Invalid selection"; sleep .7; clear; Debian_main_menu ;;
         esac
@@ -275,7 +279,7 @@ deb_firewall_check() {
             select os in "HTTP" "EMAIL" "DNS" "NTP"; do
                 case $os in
                     "HTTP" ) sudo ufw allow "${http_ports[0]}","${http_ports[1]}"; log_command "sudo ufw allow ${http_ports[0]},${http_ports[1]}"; open_menu;;
-                    "EMAIL" ) sudo  ufw allow "${email_ports[0]}","${email_ports[1]}","${email_ports[2]}","${email_ports[3]}"."${email_ports[4]}"; log_command "sudo ufw allow ${email_ports[0]},{http_ports[1]},${email_ports[2]},${email_ports[3]}.${email_ports[4]}"; open_menu;;      
+                    "EMAIL" ) sudo  ufw allow "${email_ports[0]}","${email_ports[1]}","${email_ports[2]}","${email_ports[3]}","${email_ports[4]}", "${email_ports[5]}"; log_command "sudo ufw allow ${email_ports[0]},{http_ports[1]},${email_ports[2]},${email_ports[3]},${email_ports[4]}", "${email_ports[5]}"; open_menu;;      
                     "DNS" ) sudo ufw allow "${dns_ports[0]}"; log_command "sudo ufw allow ${dns_ports[0]}"; open_menu;;
                     "NTP" ) sudo ufw allow 123; log_command "sudo ufw allow 123"; open_menu;;
                     "Splunk" ) sudo ufw allow 8089; log_command "sudo ufw allow 8089"; open_menu;;
@@ -434,6 +438,23 @@ red_firewall_check() {
         fi
     fi
 
+}
+
+backup() {
+    echo "Please enter from the list of predesited dir or enter the path to the folder you want backed up: /var/www/html..."
+    select backupdir in "NGINX" "Apache" "MySQL" "Splunk" "NTP" "DNS" "SMTP" "IMAP"; do
+        case $backupdir in
+            "NGINX" ) echo "Backing up NGINX config and data dir ""/usr/share/nginx/html /etc/nginx"" "; mkdir -p $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"; cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"; echo "This is what was ran: cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")">> $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"/nginx-backup-log.txt; log_command "mkdir -p $backuppath/nginx/ngix-backup-$(date "+%H:%M")"; log_command "cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")"; open_menu;;
+            "Apache" ) os="Apache"; os_type="web server"; break;;
+            "MySQL" ) os="MySQL"; os_type="database server"; break;;
+            "Splunk" ) os="Splunk"; os_type="log management"; break;;
+            "NTP" ) os="NTP"; os_type="network protocol"; break;;
+            "DNS" ) os="DNS"; os_type="network protocol"; break;;
+            "SMTP" ) os="SMTP"; os_type="mail protocol"; break;;
+            "IMAP" ) os="IMAP"; os_type="mail protocol"; break;;
+            * ) echo "Invalid selection";;
+        esac
+    done
 }
 
 auto_os
