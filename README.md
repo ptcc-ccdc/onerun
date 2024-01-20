@@ -46,12 +46,12 @@ To use these scripts, follow these general steps:
 
 1. Clone this repository to your Linux system:
    ```bash
-   git clone https://github.com/ptcc-ccdc/LinuxServerSEC.git
+   git clone https://github.com/ptcc-ccdc/onerun.git
    ```
 
 2. Navigate to the repository directory:
    ```bash
-   cd LinuxServerSEC
+   cd onerun
    ```
 
 3. Make the desired script executable:
