@@ -108,9 +108,9 @@ log_command() {
 #         done
 
 # }
-http_ports=(80 443)
-email_ports=(25 587 465 110 995)
-dns_ports=(53)
+# http_ports=(80 443)
+# email_ports=(25 587 465 110 995)
+# dns_ports=(53)
 
 
 # deb_firewall_check() {
@@ -172,74 +172,101 @@ dns_ports=(53)
 #     fi
 # }
 
-red_firewall_check() {
-if command -v firewalld >/dev/null 2>&1; then
-    echo "Firewalld is installed"
-    echo "Would you like to reset, enable and set ports now?
-    1. set ports
-    2. custom ports
-    Enter to skip"
-    read -r redfwinstall
-    if [ "$redfwinstall" = "1" ]; then
-        echo "Backing up firewall config ""/etc/firewalld/zones"" "
-        mkdir $backuppath/zonebackup/zonebackup-"$(date "+%H:%M")"
-        log_command "mkdir $backuppath/zonebackup/zonebackup-$(date "+%H:%M")"
-        cp /etc/firewalld/zones/* $backuppath/zonebackup/zonebackup-"$(date "+%H:%M")"
-        log_command "cp /etc/firewalld/zones/* $backuppath/zonebackup/zonebackup-$(date "+%H:%M")"
-        sudo rm -rf /etc/firewalld/zones/*
-        sudo firewall-cmd --complete-reload
-        sudo iptables -X
-        sudo iptables -F
-        sudo iptables -Z
-        sudo systemctl restart firewalld
-        log_command "rm -rf /etc/firewalld/zones/*"; log_command "sudo firewall-cmd --complete-reload"; log_command "sudo iptables -X"; log_command "sudo iptables -F"; log_command "sudo iptables -Z"; log_command "sudo systemctl restart firewalld"; 
-        echo "enter the number that you want to allow on the firewall"
-        select port in "HTTP" "EMAIL" "DNS" "NTP"; do
-            case $port in
-                "HTTP" ) for port in "${http_ports[@]}"; do sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"; done;  open_menu;;
-                "EMAIL" ) for port in "${email_ports[@]}"; do sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"; done;  open_menu;;      
-                "DNS" ) sudo firewall-cmd --zone=public --add-port=53/udp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=53/udp --permanent";  open_menu;;
-                "NTP" ) sudo firewall-cmd --zone=public --add-port=123/udp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=123/udp --permanent"; open_menu;;
-                * ) echo "Invalid selection";;
-            esac
-        done        
+# red_firewall_check() {
+# if command -v firewalld >/dev/null 2>&1; then
+#     echo "Firewalld is installed"
+#     echo "Would you like to reset, enable and set ports now?
+#     1. set ports
+#     2. custom ports
+#     Enter to skip"
+#     read -r redfwinstall
+#     if [ "$redfwinstall" = "1" ]; then
+#         echo "Backing up firewall config ""/etc/firewalld/zones"" "
+#         mkdir $backuppath/zonebackup/zonebackup-"$(date "+%H:%M")"
+#         log_command "mkdir $backuppath/zonebackup/zonebackup-$(date "+%H:%M")"
+#         cp /etc/firewalld/zones/* $backuppath/zonebackup/zonebackup-"$(date "+%H:%M")"
+#         log_command "cp /etc/firewalld/zones/* $backuppath/zonebackup/zonebackup-$(date "+%H:%M")"
+#         sudo rm -rf /etc/firewalld/zones/*
+#         sudo firewall-cmd --complete-reload
+#         sudo iptables -X
+#         sudo iptables -F
+#         sudo iptables -Z
+#         sudo systemctl restart firewalld
+#         log_command "rm -rf /etc/firewalld/zones/*"; log_command "sudo firewall-cmd --complete-reload"; log_command "sudo iptables -X"; log_command "sudo iptables -F"; log_command "sudo iptables -Z"; log_command "sudo systemctl restart firewalld"; 
+#         echo "enter the number that you want to allow on the firewall"
+#         select port in "HTTP" "EMAIL" "DNS" "NTP"; do
+#             case $port in
+#                 "HTTP" ) for port in "${http_ports[@]}"; do sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"; done;  open_menu;;
+#                 "EMAIL" ) for port in "${email_ports[@]}"; do sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"; done;  open_menu;;      
+#                 "DNS" ) sudo firewall-cmd --zone=public --add-port=53/udp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=53/udp --permanent";  open_menu;;
+#                 "NTP" ) sudo firewall-cmd --zone=public --add-port=123/udp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=123/udp --permanent"; open_menu;;
+#                 * ) echo "Invalid selection";;
+#             esac
+#         done        
 
-    fi
+#     fi
 
-else
-    if command -v iptables >/dev/null 2>&1; then
-            echo "iptables is installed"
-            echo "Enter what you want to do"
-        select os in "HTTP" "EMAIL" "DNS" "NTP"; do
-            case $os in
-                "HTTP" ) for port in "${http_ports[@]}"; do sudo iptables -A INPUT -p tcp --dport "$port" -j ACCEPT; log_command "sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT"; done;  open_menu;;
-                "EMAIL" ) for port in "${email_ports[@]}"; do sudo iptables -A INPUT -p tcp --dport "$port" -j ACCEPT; log_command "sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT"; done;  open_menu;;      
-                "DNS" ) sudo iptables -A INPUT -p udp --dport 53 -j ACCEPT; log_command "sudo iptables -A INPUT -p udp --dport 53 -j ACCEPT";  open_menu;;
-                "NTP" ) sudo iptables -A INPUT -p udp --dport 123 -j ACCEPT; log_command "sudo iptables -A INPUT -p udp --dport 123 -j ACCEPT"; open_menu;;
-                * ) echo "Invalid selection";;
-            esac
-        done 
-    else
-        echo "Neither firewalld nor iptables found!"
-        echo "Would you like to install a firewall?
-    1. Install firewalld (centOS7 and fedora21)
-    2. Install IPtables (centos6 splunk)
-    Enter to skip"
-    read -r install_firewall
-        if [ "$install_firewall" = 1 ]; then
-        sudo yum install firewalld -y
-        log_command "sudo yum install firewalld -y"
-        open_menu
+# else
+#     if command -v iptables >/dev/null 2>&1; then
+#             echo "iptables is installed"
+#             echo "Dont run iptables on anything other then centOS 6"
+#             echo "Enter what you want to do"
+#         select os in "HTTP" "EMAIL" "DNS" "NTP"; do
+#             case $os in
+#                 "HTTP" ) for port in "${http_ports[@]}"; do sudo iptables -A INPUT -p tcp --dport "$port" -j ACCEPT; log_command "sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT"; done;  open_menu;;
+#                 "EMAIL" ) for port in "${email_ports[@]}"; do sudo iptables -A INPUT -p tcp --dport "$port" -j ACCEPT; log_command "sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT"; done;  open_menu;;      
+#                 "DNS" ) sudo iptables -A INPUT -p udp --dport 53 -j ACCEPT; log_command "sudo iptables -A INPUT -p udp --dport 53 -j ACCEPT";  open_menu;;
+#                 "NTP" ) sudo iptables -A INPUT -p udp --dport 123 -j ACCEPT; log_command "sudo iptables -A INPUT -p udp --dport 123 -j ACCEPT"; open_menu;;
+#                 * ) echo "Invalid selection";;
+#             esac
+#         done 
+#     else
+#         echo "Neither firewalld nor iptables found!"
+#         echo "Would you like to install a firewall?
+#     1. Install firewalld (centOS7 and fedora21)
+#     2. Install IPtables (centos6 splunk)
+#     Enter to skip"
+#     read -r install_firewall
+#         if [ "$install_firewall" = 1 ]; then
+#         sudo yum install firewalld -y
+#         log_command "sudo yum install firewalld -y"
+#         open_menu
 
-        elif [ "$install_firewall" = 2 ]; then
-        sudo yum install iptables-services -y
-        log_command "sudo yum install iptables-services -y"
-        open_menu
-        fi
-    fi
-fi
+#         elif [ "$install_firewall" = 2 ]; then
+#         sudo yum install iptables-services -y
+#         log_command "sudo yum install iptables-services -y"
+#         open_menu
+#         fi
+#     fi
+# fi
 
+# }
+
+
+# If installing on Ubuntu using apt-get, try /usr/share/nginx/www.
+
+# On more recent versions the path has changed to: /usr/share/nginx/html
+
+# red_firewall_check
+
+
+backup() {
+    echo "Please enter from the list of predesited dir or enter the path to the folder you want backed up: /var/www/html..."
+    select backupdir in "NGINX" "Apache" "MySQL" "Splunk" "NTP" "DNS" "SMTP" "IMAP"; do
+        case $backupdir in
+            "NGINX" ) echo "Backing up NGINX config and data dir ""/usr/share/nginx/html /etc/nginx"" "; mkdir -p $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"; cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"; echo "This is what was ran: cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")">> $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"/nginx-backup-log.txt; open_menu;;
+            "Apache" ) os="Apache"; os_type="web server"; break;;
+            "MySQL" ) os="MySQL"; os_type="database server"; break;;
+            "Splunk" ) os="Splunk"; os_type="log management"; break;;
+            "NTP" ) os="NTP"; os_type="network protocol"; break;;
+            "DNS" ) os="DNS"; os_type="network protocol"; break;;
+            "SMTP" ) os="SMTP"; os_type="mail protocol"; break;;
+            "IMAP" ) os="IMAP"; os_type="mail protocol"; break;;
+            * ) echo "Invalid selection";;
+        esac
+    done
 }
+backup
 
-
-red_firewall_check
+log_command "mkdir -p $backuppath/nginx/ngix-backup-$(date "+%H:%M")"
+log_command "cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")"
