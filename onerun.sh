@@ -3,6 +3,7 @@
 clear
 users=$(awk -F':' '{ print $1}' /etc/passwd)
 logpath=./logs
+backuppath=./backups
 http_ports=(80 443)
 email_ports=(25 587 465 110 995)
 dns_ports=(53)
@@ -91,8 +92,10 @@ auto_os () {
 
 open_menu () {
     if [ "$os_type" = "redhat" ]; then
+        clear
         redhat_main_menu
         elif [ "$os_type" = "Debian" ]; then
+        clear
         Debian_main_menu
 
         else echo "Uh you shouldn't see this"
@@ -104,10 +107,10 @@ redhat_main_menu () {
     echo "OS is" "$os"
     select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords"; do
         case $ubuntu_option in
-            "Remove ssh" ) echo "Will remove ssh "; break;;
-            "Change ALL users passwords" ) echo "Will change all user passwords"; break;;
+            "Remove ssh" ) red_remove_ssh; open_menu;;
+            "Change ALL users passwords" ) change_all_pass; open_menu;;
             "Check users that can login" ) echo "Ubuntu 14"; break;;
-            "Check Firwall" ) echo "Check UFW and service ports"; break;;
+            "Check Firwall" ) red_firewall_check; open_menu;;
             "Enter services" ) echo "Should auto find service but have option to add man"; break;;
             "users w/o passwords" ) users_no_pass;;
         #  "CentOS 7" ) echo "CentOS 7"; break;;
@@ -120,14 +123,15 @@ redhat_main_menu () {
 Debian_main_menu () {
     clear
     echo "OS is" "$os"
-    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall"; do
+    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh"; do
         case $ubuntu_option in
             "Remove ssh" ) deb_remove_ssh;;
-            "Change ALL users passwords" ) chnage_all_pass;;
+            "Change ALL users passwords" ) change_all_pass; open_menu;;
             "Check users that can login" ) echo "Ubuntu 14"; break;;
             "Check Firewall" ) deb_firewall_check;;
             "Enter services" ) echo "Should auto find service but have option to add man"; break;;
             "users w/o passwords" ) users_no_pass;;
+            "Remove .ssh" ) remove_.ssh; open_menu;;
         #  "CentOS 7" ) echo "CentOS 7"; break;;
             * ) echo "Invalid selection"; sleep .7; clear; Debian_main_menu ;;
         esac
@@ -229,7 +233,7 @@ users_no_pass() {
     done
 }
 
-chnage_all_pass() {
+change_all_pass() {
     clear
     echo "This will prompt you to change ALL users passwords.
     enter 1 to continue or enter to go back to main menu"
@@ -241,6 +245,7 @@ chnage_all_pass() {
             passwd "$user"
             log_command "passwd $user"
         done
+        open_menu
     else clear
         open_menu
     fi
@@ -267,11 +272,13 @@ deb_firewall_check() {
             log_command "sudo ufw default allow outgoing"
             clear
             echo "enter the number that you want to allow on the firewall"
-            select os in "HTTP" "EMAIL" "DNS"; do
+            select os in "HTTP" "EMAIL" "DNS" "NTP"; do
                 case $os in
                     "HTTP" ) sudo ufw allow "${http_ports[0]}","${http_ports[1]}"; log_command "sudo ufw allow ${http_ports[0]},${http_ports[1]}"; open_menu;;
                     "EMAIL" ) sudo  ufw allow "${email_ports[0]}","${email_ports[1]}","${email_ports[2]}","${email_ports[3]}"."${email_ports[4]}"; log_command "sudo ufw allow ${email_ports[0]},{http_ports[1]},${email_ports[2]},${email_ports[3]}.${email_ports[4]}"; open_menu;;      
                     "DNS" ) sudo ufw allow "${dns_ports[0]}"; log_command "sudo ufw allow ${dns_ports[0]}"; open_menu;;
+                    "NTP" ) sudo ufw allow 123; log_command "sudo ufw allow 123"; open_menu;;
+                    "Splunk" ) sudo ufw allow 8089; log_command "sudo ufw allow 8089"; open_menu;;
                     * ) echo "Invalid selection";;
                 esac
             done
@@ -357,6 +364,76 @@ deb_firewall_check() {
             fi
         fi
     fi
+}
+
+red_firewall_check() {
+    if command -v firewalld >/dev/null 2>&1; then
+        echo "Firewalld is installed"
+        echo "Would you like to reset, enable and set ports now?
+        1. set ports
+        2. custom ports
+        Enter to skip"
+        read -r redfwinstall
+        if [ "$redfwinstall" = "1" ]; then
+            echo "Backing up firewall config ""/etc/firewalld/zones"" "
+            mkdir $backuppath/zonebackup/zonebackup-"$(date "+%H:%M")"
+            log_command "mkdir $backuppath/zonebackup/zonebackup-$(date "+%H:%M")"
+            cp /etc/firewalld/zones/* $backuppath/zonebackup/zonebackup-"$(date "+%H:%M")"
+            log_command "cp /etc/firewalld/zones/* $backuppath/zonebackup/zonebackup-$(date "+%H:%M")"
+            sudo rm -rf /etc/firewalld/zones/*
+            sudo firewall-cmd --complete-reload
+            sudo iptables -X
+            sudo iptables -F
+            sudo iptables -Z
+            sudo systemctl restart firewalld
+            log_command "rm -rf /etc/firewalld/zones/*"; log_command "sudo firewall-cmd --complete-reload"; log_command "sudo iptables -X"; log_command "sudo iptables -F"; log_command "sudo iptables -Z"; log_command "sudo systemctl restart firewalld"; 
+            echo "enter the number that you want to allow on the firewall"
+            select port in "HTTP" "EMAIL" "DNS" "NTP"; do
+                case $port in
+                    "HTTP" ) for port in "${http_ports[@]}"; do sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"; done;  open_menu;;
+                    "EMAIL" ) for port in "${email_ports[@]}"; do sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"; done;  open_menu;;      
+                    "DNS" ) sudo firewall-cmd --zone=public --add-port=53/udp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=53/udp --permanent";  open_menu;;
+                    "NTP" ) sudo firewall-cmd --zone=public --add-port=123/udp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=123/udp --permanent"; open_menu;;
+                    * ) echo "Invalid selection";;
+                esac
+            done        
+
+        fi
+
+    else
+        if command -v iptables >/dev/null 2>&1; then
+                echo "iptables is installed"
+                echo "Dont run iptables on anything other then centOS 6"
+                echo "Enter what you want to do"
+            select os in "HTTP" "EMAIL" "DNS" "NTP"; do
+                case $os in
+                    "HTTP" ) for port in "${http_ports[@]}"; do sudo iptables -A INPUT -p tcp --dport "$port" -j ACCEPT; log_command "sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT"; done;  open_menu;;
+                    "EMAIL" ) for port in "${email_ports[@]}"; do sudo iptables -A INPUT -p tcp --dport "$port" -j ACCEPT; log_command "sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT"; done;  open_menu;;      
+                    "DNS" ) sudo iptables -A INPUT -p udp --dport 53 -j ACCEPT; log_command "sudo iptables -A INPUT -p udp --dport 53 -j ACCEPT";  open_menu;;
+                    "NTP" ) sudo iptables -A INPUT -p udp --dport 123 -j ACCEPT; log_command "sudo iptables -A INPUT -p udp --dport 123 -j ACCEPT"; open_menu;;
+                    * ) echo "Invalid selection";;
+                esac
+            done 
+        else
+            echo "Neither firewalld nor iptables found!"
+            echo "Would you like to install a firewall?
+        1. Install firewalld (centOS7 and fedora21)
+        2. Install IPtables (centos6 splunk)
+        Enter to skip"
+        read -r install_firewall
+            if [ "$install_firewall" = 1 ]; then
+            sudo yum install firewalld -y
+            log_command "sudo yum install firewalld -y"
+            open_menu
+
+            elif [ "$install_firewall" = 2 ]; then
+            sudo yum install iptables-services -y
+            log_command "sudo yum install iptables-services -y"
+            open_menu
+            fi
+        fi
+    fi
+
 }
 
 auto_os

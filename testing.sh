@@ -1,7 +1,8 @@
 #!/bin/bash
 clear
-mkdir ./logs
+mkdir -p ./logs
 logpath=./logs
+backuppath=./backups
 log_command() {
     echo "At $(date) the user $USER ran: $1" >> $logpath/ran_commands.txt
 }
@@ -112,64 +113,133 @@ email_ports=(25 587 465 110 995)
 dns_ports=(53)
 
 
+# deb_firewall_check() {
+#     if command -v ufw >/dev/null 2>&1; then
+#         echo "UFW is installed"
+#     else 
+#         echo "UFW is not installed"
+#         echo "Would you like to install UFW, enable and set ports now?"
+#         echo "Enter 1 to install or enter to skip"
+#         read -r ufw_in
+#         if [ "$ufw_in" = "1" ]; then
+#             echo "Installing UFW with apt now..."
+#             sudo apt install ufw -y
+#             log_command "sudo apt install ufw -y"
+#             sudo ufw --force reset
+#             log_command "sudo ufw --force reset"
+#             sudo ufw enable
+#             log_command "sudo ufw enable"            
+#             sudo ufw default deny incoming
+#             log_command "sudo ufw default deny incoming"
+#             sudo ufw default allow outgoing
+#             log_command "sudo ufw default allow outgoing"
+#             clear
+#             echo "UFW installed and enabled would you like to open set ports or custom ports?
+#     1. set ports
+#     2. custom ports
+#     Enter to skip"
+#             read -r deb_ports
+#             if [ "$deb_ports" = "1" ]; then
+#                 echo "enter the number that you want to allow on the firewall"
+#                 select os in "HTTP" "EMAIL" "DNS"; do
+#                     case $os in
+#                         "HTTP" ) sudo ufw allow "${http_ports[0]}","${http_ports[1]}"; log_command "sudo ufw allow ${http_ports[0]},${http_ports[1]}"; open_menu;;
+#                         "EMAIL" ) sudo  ufw allow "${email_ports[0]}","${email_ports[1]}","${email_ports[2]}","${email_ports[3]}"."${email_ports[4]}"; log_command "sudo ufw allow ${email_ports[0]},{http_ports[1]},${email_ports[2]},${email_ports[3]}.${email_ports[4]}"; open_menu;;      
+#                         "DNS" ) sudo ufw allow "${dns_ports[0]}"; log_command "sudo ufw allow ${dns_ports[0]}"; open_menu;;
+#                         * ) echo "Invalid selection";;
+#                     esac
+#                 done
 
-deb_firewall_check() {
-    if command -v ufw >/dev/null 2>&1; then
-        echo "UFW is installed"
-    else 
-        echo "UFW is not installed"
-        echo "Would you like to install UFW, enable and set ports now?"
-        echo "Enter 1 to install or enter to skip"
-        read -r ufw_in
-        if [ "$ufw_in" = "1" ]; then
-            echo "Installing UFW with apt now..."
-            sudo apt install ufw -y
-            log_command "sudo apt install ufw -y"
-            sudo ufw --force reset
-            log_command "sudo ufw --force reset"
-            sudo ufw enable
-            log_command "sudo ufw enable"            
-            sudo ufw default deny incoming
-            log_command "sudo ufw default deny incoming"
-            sudo ufw default allow outgoing
-            log_command "sudo ufw default allow outgoing"
-            clear
-            echo "UFW installed and enabled would you like to open set ports or custom ports?
+#             elif [ "$deb_ports" = "2" ]; then
+#                 clear
+#                 echo "Manual mode"
+#                 echo "Please enter ports divided by spaces. 80 443..."
+#                 read -r -a cust_ports
+#                 clear
+#                 echo "allowing ports ${cust_ports[*]}"
+#                 for port in "${cust_ports[@]}"; do
+#                     sudo ufw allow "$port"
+#                     log_command "sudo ufw allow $port"
+#                     done
+#                 sudo ufw enable
+#                 clear
+#                 open_menu
+#             else
+#                 clear
+#                 open_menu                
+#             fi
+#         fi
+#     fi
+# }
+
+red_firewall_check() {
+if command -v firewalld >/dev/null 2>&1; then
+    echo "Firewalld is installed"
+    echo "Would you like to reset, enable and set ports now?
     1. set ports
     2. custom ports
     Enter to skip"
-            read -r deb_ports
-            if [ "$deb_ports" = "1" ]; then
-                echo "enter the number that you want to allow on the firewall"
-                select os in "HTTP" "EMAIL" "DNS"; do
-                    case $os in
-                        "HTTP" ) sudo ufw allow "${http_ports[0]}","${http_ports[1]}"; log_command "sudo ufw allow ${http_ports[0]},${http_ports[1]}"; open_menu;;
-                        "EMAIL" ) sudo  ufw allow "${email_ports[0]}","${email_ports[1]}","${email_ports[2]}","${email_ports[3]}"."${email_ports[4]}"; log_command "sudo ufw allow ${email_ports[0]},{http_ports[1]},${email_ports[2]},${email_ports[3]}.${email_ports[4]}"; open_menu;;      
-                        "DNS" ) sudo ufw allow "${dns_ports[0]}"; log_command "sudo ufw allow ${dns_ports[0]}"; open_menu;;
-                        * ) echo "Invalid selection";;
-                    esac
-                done
+    read -r redfwinstall
+    if [ "$redfwinstall" = "1" ]; then
+        echo "Backing up firewall config ""/etc/firewalld/zones"" "
+        mkdir $backuppath/zonebackup/zonebackup-"$(date "+%H:%M")"
+        log_command "mkdir $backuppath/zonebackup/zonebackup-$(date "+%H:%M")"
+        cp /etc/firewalld/zones/* $backuppath/zonebackup/zonebackup-"$(date "+%H:%M")"
+        log_command "cp /etc/firewalld/zones/* $backuppath/zonebackup/zonebackup-$(date "+%H:%M")"
+        sudo rm -rf /etc/firewalld/zones/*
+        sudo firewall-cmd --complete-reload
+        sudo iptables -X
+        sudo iptables -F
+        sudo iptables -Z
+        sudo systemctl restart firewalld
+        log_command "rm -rf /etc/firewalld/zones/*"; log_command "sudo firewall-cmd --complete-reload"; log_command "sudo iptables -X"; log_command "sudo iptables -F"; log_command "sudo iptables -Z"; log_command "sudo systemctl restart firewalld"; 
+        echo "enter the number that you want to allow on the firewall"
+        select port in "HTTP" "EMAIL" "DNS" "NTP"; do
+            case $port in
+                "HTTP" ) for port in "${http_ports[@]}"; do sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"; done;  open_menu;;
+                "EMAIL" ) for port in "${email_ports[@]}"; do sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"; done;  open_menu;;      
+                "DNS" ) sudo firewall-cmd --zone=public --add-port=53/udp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=53/udp --permanent";  open_menu;;
+                "NTP" ) sudo firewall-cmd --zone=public --add-port=123/udp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=123/udp --permanent"; open_menu;;
+                * ) echo "Invalid selection";;
+            esac
+        done        
 
-            elif [ "$deb_ports" = "2" ]; then
-                clear
-                echo "Manual mode"
-                echo "Please enter ports divided by spaces. 80 443..."
-                read -r -a cust_ports
-                clear
-                echo "allowing ports ${cust_ports[*]}"
-                for port in "${cust_ports[@]}"; do
-                    sudo ufw allow "$port"
-                    log_command "sudo ufw allow $port"
-                    done
-                sudo ufw enable
-                clear
-                open_menu
-            else
-                clear
-                open_menu                
-            fi
+    fi
+
+else
+    if command -v iptables >/dev/null 2>&1; then
+            echo "iptables is installed"
+            echo "Enter what you want to do"
+        select os in "HTTP" "EMAIL" "DNS" "NTP"; do
+            case $os in
+                "HTTP" ) for port in "${http_ports[@]}"; do sudo iptables -A INPUT -p tcp --dport "$port" -j ACCEPT; log_command "sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT"; done;  open_menu;;
+                "EMAIL" ) for port in "${email_ports[@]}"; do sudo iptables -A INPUT -p tcp --dport "$port" -j ACCEPT; log_command "sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT"; done;  open_menu;;      
+                "DNS" ) sudo iptables -A INPUT -p udp --dport 53 -j ACCEPT; log_command "sudo iptables -A INPUT -p udp --dport 53 -j ACCEPT";  open_menu;;
+                "NTP" ) sudo iptables -A INPUT -p udp --dport 123 -j ACCEPT; log_command "sudo iptables -A INPUT -p udp --dport 123 -j ACCEPT"; open_menu;;
+                * ) echo "Invalid selection";;
+            esac
+        done 
+    else
+        echo "Neither firewalld nor iptables found!"
+        echo "Would you like to install a firewall?
+    1. Install firewalld (centOS7 and fedora21)
+    2. Install IPtables (centos6 splunk)
+    Enter to skip"
+    read -r install_firewall
+        if [ "$install_firewall" = 1 ]; then
+        sudo yum install firewalld -y
+        log_command "sudo yum install firewalld -y"
+        open_menu
+
+        elif [ "$install_firewall" = 2 ]; then
+        sudo yum install iptables-services -y
+        log_command "sudo yum install iptables-services -y"
+        open_menu
         fi
     fi
+fi
+
 }
 
-deb_firewall_check
+
+red_firewall_check
