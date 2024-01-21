@@ -252,16 +252,17 @@ log_command() {
 
 backup() {
     echo "Please enter from the list of predesited dir or enter the path to the folder you want backed up: /var/www/html..."
-    select backupdir in "NGINX" "Apache" "MySQL" "Splunk" "NTP" "DNS" "SMTP" "IMAP"; do
+    select backupdir in "NGINX" "Apache(HTTPD)" "MySQL" "Splunk" "NTP" "DNS" "SMTP" "IMAP"; do
         case $backupdir in
             "NGINX" ) echo "Backing up NGINX config and data dir ""/usr/share/nginx/html /etc/nginx"" "; mkdir -p $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"; cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"; echo "This is what was ran: cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")">> $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"/nginx-backup-log.txt; log_command "mkdir -p $backuppath/nginx/ngix-backup-$(date "+%H:%M")"; log_command "cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")"; open_menu;;
-            "Apache" ) os="Apache"; os_type="web server"; break;;
-            "MySQL" ) os="MySQL"; os_type="database server"; break;;
-            "Splunk" ) os="Splunk"; os_type="log management"; break;;
-            "NTP" ) os="NTP"; os_type="network protocol"; break;;
-            "DNS" ) os="DNS"; os_type="network protocol"; break;;
-            "SMTP" ) os="SMTP"; os_type="mail protocol"; break;;
-            "IMAP" ) os="IMAP"; os_type="mail protocol"; break;;
+            # add logging to apache
+            "Apache(HTTPD)" ) echo "Backing up Apache(HTTPD) config and data dir ""/var/www/* /etc/httpd/*"" "; mkdir -p $backuppath/nginx/apache-backup-"$(date "+%H:%M")"; cp -r /usr/share/nginx/html /etc/nginx $backuppath/apache/apache-backup-"$(date "+%H:%M")"; echo "This is what was ran: cp -r /usr/share/nginx/html /etc/nginx $backuppath/apache/apache-backup-$(date "+%H:%M")">> $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"/nginx-backup-log.txt; log_command "mkdir -p $backuppath/apache/apache-backup-$(date "+%H:%M")"; log_command "cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")"; open_menu;;
+            "MySQL" ) echo  "Not fast enough :("; break;;
+            "Splunk" ) echo  "Not fast enough :("; break;;
+            "NTP" ) echo  "Not fast enough :("; break;;
+            "DNS" ) oecho  "Not fast enough :("; break;;
+            "SMTP" ) echo  "Not fast enough :("; break;;
+            "IMAP" ) echo  "Not fast enough :("; break;;
             * ) echo "Invalid selection";;
         esac
     done
