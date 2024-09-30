@@ -1,0 +1,42 @@
+At Mon Sep 30 19:16:20 UTC 2024 the user \e[31mcoder\e[0m ran: \e[31mmkdir -p ./backups ./logs\e[0m
+At Mon Sep 30 19:16:58 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 19:17:41 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 19:18:18 UTC 2024 the user \e[31mcoder\e[0m ran: \e[31mmkdir -p ./backups ./logs\e[0m
+At Mon Sep 30 19:18:26 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 19:24:31 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 19:30:43 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 19:31:41 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 19:31:54 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 19:32:54 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 19:35:50 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 19:53:47 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 19:54:06 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 19:55:11 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 20:00:20 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 20:02:05 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 20:02:29 UTC 2024 the user [31mcoder[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 20:05:21 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs[0m
+At Mon Sep 30 20:13:11 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:14:22 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:14:48 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:15:55 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:17:12 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:18:59 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:19:18 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:19:27 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:20:42 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:30:41 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:31:53 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:33:02 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:33:41 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:35:18 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:35:44 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:35:52 UTC 2024 the user [31mroot[0m ran: [31mpasswd test4[0m
+At Mon Sep 30 20:36:57 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:37:45 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:38:21 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups/nginx/ngix-backup-20:38[0m
+At Mon Sep 30 20:38:21 UTC 2024 the user [31mroot[0m ran: [31mcp -r /usr/share/nginx/html /etc/nginx ./backups/nginx/ngix-backup-20:38[0m
+At Mon Sep 30 20:40:16 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:41:02 UTC 2024 the user [31mroot[0m ran: [31mpasswd test6[0m
+At Mon Sep 30 20:43:24 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
+At Mon Sep 30 20:48:17 UTC 2024 the user [31mroot[0m ran: [31mmkdir -p ./backups ./logs/user-logs[0m
