@@ -9,7 +9,6 @@
 
 # #check cron tab
 
-
 # #back up network config
 
 # #disable admin log (php)
@@ -18,9 +17,7 @@
 
 # #MYSQL back up and setup
 
-
 # #fix
-
 
 # # users=$(awk -F':' '{ print $1}' /etc/passwd)
 # # echo $users
@@ -37,11 +34,11 @@
 # #     for user in $users;
 # #     do echo "Removing $user .ssh dir"
 # #         log_command "rm -rf $user)"
-# #         rm -rf /home/$user/.ssh 
+# #         rm -rf /home/$user/.ssh
 # # done
 # # }
 
-# # cat ./logs/found-ssh-keys.txt | while read line 
+# # cat ./logs/found-ssh-keys.txt | while read line
 # # do
 # #    echo $line
 # # done
@@ -86,8 +83,6 @@
 
 # #check var names before adding funtion and set to rm instead of cp and add commnd log
 
-
-
 # # findrm_keys() {
 # #     logpath=./logs
 # #     log_command() {
@@ -112,11 +107,10 @@
 # # email_ports=(25 587 465 110 995)
 # # dns_ports=(53)
 
-
 # # deb_firewall_check() {
 # #     if command -v ufw >/dev/null 2>&1; then
 # #         echo "UFW is installed"
-# #     else 
+# #     else
 # #         echo "UFW is not installed"
 # #         echo "Would you like to install UFW, enable and set ports now?"
 # #         echo "Enter 1 to install or enter to skip"
@@ -128,7 +122,7 @@
 # #             sudo ufw --force reset
 # #             log_command "sudo ufw --force reset"
 # #             sudo ufw enable
-# #             log_command "sudo ufw enable"            
+# #             log_command "sudo ufw enable"
 # #             sudo ufw default deny incoming
 # #             log_command "sudo ufw default deny incoming"
 # #             sudo ufw default allow outgoing
@@ -144,7 +138,7 @@
 # #                 select os in "HTTP" "EMAIL" "DNS"; do
 # #                     case $os in
 # #                         "HTTP" ) sudo ufw allow "${http_ports[0]}","${http_ports[1]}"; log_command "sudo ufw allow ${http_ports[0]},${http_ports[1]}"; open_menu;;
-# #                         "EMAIL" ) sudo  ufw allow "${email_ports[0]}","${email_ports[1]}","${email_ports[2]}","${email_ports[3]}"."${email_ports[4]}"; log_command "sudo ufw allow ${email_ports[0]},{http_ports[1]},${email_ports[2]},${email_ports[3]}.${email_ports[4]}"; open_menu;;      
+# #                         "EMAIL" ) sudo  ufw allow "${email_ports[0]}","${email_ports[1]}","${email_ports[2]}","${email_ports[3]}"."${email_ports[4]}"; log_command "sudo ufw allow ${email_ports[0]},{http_ports[1]},${email_ports[2]},${email_ports[3]}.${email_ports[4]}"; open_menu;;
 # #                         "DNS" ) sudo ufw allow "${dns_ports[0]}"; log_command "sudo ufw allow ${dns_ports[0]}"; open_menu;;
 # #                         * ) echo "Invalid selection";;
 # #                     esac
@@ -166,7 +160,7 @@
 # #                 open_menu
 # #             else
 # #                 clear
-# #                 open_menu                
+# #                 open_menu
 # #             fi
 # #         fi
 # #     fi
@@ -192,17 +186,17 @@
 # #         sudo iptables -F
 # #         sudo iptables -Z
 # #         sudo systemctl restart firewalld
-# #         log_command "rm -rf /etc/firewalld/zones/*"; log_command "sudo firewall-cmd --complete-reload"; log_command "sudo iptables -X"; log_command "sudo iptables -F"; log_command "sudo iptables -Z"; log_command "sudo systemctl restart firewalld"; 
+# #         log_command "rm -rf /etc/firewalld/zones/*"; log_command "sudo firewall-cmd --complete-reload"; log_command "sudo iptables -X"; log_command "sudo iptables -F"; log_command "sudo iptables -Z"; log_command "sudo systemctl restart firewalld";
 # #         echo "enter the number that you want to allow on the firewall"
 # #         select port in "HTTP" "EMAIL" "DNS" "NTP"; do
 # #             case $port in
 # #                 "HTTP" ) for port in "${http_ports[@]}"; do sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"; done;  open_menu;;
-# #                 "EMAIL" ) for port in "${email_ports[@]}"; do sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"; done;  open_menu;;      
+# #                 "EMAIL" ) for port in "${email_ports[@]}"; do sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"; done;  open_menu;;
 # #                 "DNS" ) sudo firewall-cmd --zone=public --add-port=53/udp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=53/udp --permanent";  open_menu;;
 # #                 "NTP" ) sudo firewall-cmd --zone=public --add-port=123/udp --permanent; log_command "sudo firewall-cmd --zone=public --add-port=123/udp --permanent"; open_menu;;
 # #                 * ) echo "Invalid selection";;
 # #             esac
-# #         done        
+# #         done
 
 # #     fi
 
@@ -214,12 +208,12 @@
 # #         select os in "HTTP" "EMAIL" "DNS" "NTP"; do
 # #             case $os in
 # #                 "HTTP" ) for port in "${http_ports[@]}"; do sudo iptables -A INPUT -p tcp --dport "$port" -j ACCEPT; log_command "sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT"; done;  open_menu;;
-# #                 "EMAIL" ) for port in "${email_ports[@]}"; do sudo iptables -A INPUT -p tcp --dport "$port" -j ACCEPT; log_command "sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT"; done;  open_menu;;      
+# #                 "EMAIL" ) for port in "${email_ports[@]}"; do sudo iptables -A INPUT -p tcp --dport "$port" -j ACCEPT; log_command "sudo iptables -A INPUT -p tcp --dport $port -j ACCEPT"; done;  open_menu;;
 # #                 "DNS" ) sudo iptables -A INPUT -p udp --dport 53 -j ACCEPT; log_command "sudo iptables -A INPUT -p udp --dport 53 -j ACCEPT";  open_menu;;
 # #                 "NTP" ) sudo iptables -A INPUT -p udp --dport 123 -j ACCEPT; log_command "sudo iptables -A INPUT -p udp --dport 123 -j ACCEPT"; open_menu;;
 # #                 * ) echo "Invalid selection";;
 # #             esac
-# #         done 
+# #         done
 # #     else
 # #         echo "Neither firewalld nor iptables found!"
 # #         echo "Would you like to install a firewall?
@@ -242,13 +236,11 @@
 
 # # }
 
-
 # # If installing on Ubuntu using apt-get, try /usr/share/nginx/www.
 
 # # On more recent versions the path has changed to: /usr/share/nginx/html
 
 # # red_firewall_check
-
 
 # backup() {
 #     echo "Please enter from the list of predesited dir or enter the path to the folder you want backed up: /var/www/html..."
@@ -271,43 +263,55 @@
 
 # log_command "mkdir -p $backuppath/nginx/ngix-backup-$(date "+%H:%M")"; log_command "cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")";
 
-
-
-
-
-
-
-
-
-
-
-
-
 read -p "Enter base IP address: " base_range
 base_range_formated=$(echo $base_range | sed 's/\./ /g')
 echo "Formatted base IP address: $base_range_formated"
 read -p "Enter last IP in range: " max_range
 max_range_formated=$(echo $max_range | sed 's/\./ /g')
 echo "Formatted last IP address: $max_range_formated"
-base_range_formated=( ${base_range_formated} )
-max_range_formated=( ${max_range_formated} )
+# base_range_formated=(${base_range_formated})
+# max_range_formated=(${max_range_formated})
 for i in {0..1}; do
     command[$i]="(${base_range_formated[$i]}\.)"
 done
 
 if [ ${max_range_formated[2]} != ${base_range_formated[2]} ]; then
-    command[2]="([${base_range_formated[2]}-${max_range_formated[2]}]\.)"
-
+    # see if the 3rd octect is higher the 10
+    if [ ${max_range_formated[2]} -gt 10 ]; then
+        len=${#max_range_formated[2]}
+        echo $len
+        command[2]="([${base_range_formated[2]}-9]{1,"$len"}\.)"
+    elif [ ${max_range_formated[2]} == 10 ]; then
+        command[2]="([${base_range_formated[2]}-9]{1,2}\.)"
+    else
+        command[2]="([${base_range_formated[2]}-${max_range_formated[2]}]\.)"
     fi
+fi
 last_octet_regex='([0-9]{1,3})'
 
 full_pattern="${command[0]}${command[1]}${command[2]}$last_octet_regex"
 
 echo "Full regex pattern: '$full_pattern'"
 
-grep -E "$full_pattern" testing,log
+tail -f /var/log/*.log | grep -E --line-buffered "$full_pattern" | while read -r line; do
+    wal "Red Team IP Found: $line"
+done
+
+# tail -f testing,log all "Matched: $line"
+
+# tail -f testing,log | grep -E "$full_pattern" # | awk '!seen[$0]++'
 
 
+# if [ ${max_range_formated[2]} ] >10; then
+#     echo "highr"
+#     3rd_octect=
+
+# elif [ ${max_range_formated[2]} ] <10; then
+#     echo "Lower"
+# else
+#     echo "= 10"
+
+# fi
 
 # count=0
 # for i in {0..3}; do
@@ -316,17 +320,15 @@ grep -E "$full_pattern" testing,log
 #         command[$i]="(${base_range_formated[$i]}\.)"
 #     elif [ $i == 3 ]; then
 #             last_octet_regex='([0-9]{1,3})'
-#     else 
+#     else
 #         echo "diff"
 #         echo "else" $count $command
 #         command[$i]='([0-9]{1}|1)'
-        
+
 #     fi
 # done
 # echo "$command"
 
-
 # grep -E '192\.168\.1\.([0-9]{1,3})' filename
-
 
 # grep -E '192\.168\.10\.([1-9][0-9]?|[1-9]|100)' filename
