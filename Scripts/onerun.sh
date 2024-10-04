@@ -1,5 +1,6 @@
 #!/bin/bash
 clear
+
 source ./onerun.env
 if [ $skip_banner -eq 0 ]; then
     banner
@@ -10,6 +11,12 @@ fi
 trap ctl-c SIGINT
 
 ctl-c() {
+    killall=$(ps -fC onerun.sh | awk 'NR==2 {print $2}')
+    for i in $killall; do
+        echo killing $i
+        kill -9 $i
+    done
+    read -p wait
     clear
     echo -e "${ENDCOLOR}" "Good luck, hopfully something worked"
     echo -e "              0000_____________0000________0000000000000000__000000000000000000+\n            00000000_________00000000______000000000000000__0000000000000000000+\n           000____000_______000____000_____000_______0000__00______0+\n          000______000_____000______000_____________0000___00______0+\n         0000______0000___0000______0000___________0000_____0_____0+\n         0000______0000___0000______0000__________0000___________0+\n         0000______0000___0000______0000_________000___0000000000+\n         0000______0000___0000______0000________0000+\n          000______000_____000______000________0000+\n           000____000_______000____000_______00000+\n            00000000_________00000000_______0000000+\n              0000_____________0000________000000007;"
@@ -236,7 +243,7 @@ Debian_main_menu() {
             7 "Remove users .ssh" \
             8 "Backup dirs" \
             9 "Magicx" \
-            10 "testing" \
+            10 "Log IP Monitor" \
             0 "Exit" 2>menu_choice.txt
 
         # Read the user's choice
@@ -258,7 +265,7 @@ Debian_main_menu() {
         7) run_function_if_exists "remove_.ssh" ;;
         8) run_function_if_exists "backup" ;;
         9) run_function_if_exists "learning_the_hard_way" ;;
-        10) run_function_if_exists "testingfunc" ;;
+        10) run_function_if_exists "ip_mon" ;;
         0)
             rm -rf menu_choice.txt
             exit
@@ -322,7 +329,8 @@ remove_.ssh() {
     done
 }
 
-deb_remove_ssh_diabled() {
+deb_remove_ssh() {
+    saftey_check
     echo "this will completly remove ssh and prevent future installs"
     echo "This will also most likey remove any ssh keys so run "Check ssh keys" if you havent before (check logs in $logpath/ssh)"
     echo "removing all users in passwd list .ssh"
@@ -350,6 +358,7 @@ deb_remove_ssh_diabled() {
 }
 
 red_remove_ssh() {
+    saftey_check
     echo "this will completly remove ssh and prevent future installs"
     echo "This will also most likey remove any ssh keys so run "Check ssh keys" if you havent before"
     echo "Removing openssh-server"
@@ -384,7 +393,6 @@ red_remove_ssh() {
 }
 
 users_no_pass() {
-    saftey_check
     nopass=$(passwd -S -a | grep NP | cut -f1 -d" ")
     if [ -z $nopass ]; then
         echo -e "${GREEN}There are no users without passwords${ENDCOLOR}"
@@ -471,6 +479,69 @@ rand_users_password() {
     fi
 }
 
+setup_newtty() {
+    clear
+    echo -e "${YELLOW}This will walk you through setting up another TTY for the funtion ${FUNCNAME[1]}.${ENDCOLOR}"
+    echo -e "${YELLOW}After you enter the TTY number you want it will bring you to that TTY ${BOLDRED}you will have to login.${ENDCOLOR}"
+    echo -e "${YELLOW}If you cant switch back to your orginal TTY the script will attempt to bring you back after a timeout but you many have to use ctl+alt+fn#${ENDCOLOR}"
+    cur_tty=$(tty | grep -o [0-9])
+    echo -e "Current TTY value" $cur_tty
+    read -p "Enter the just the TTY number you want not /dev..: " TTYnum
+    read -p "Enter the timeout in seconds before you are brought back to this tty: " sec
+    chvt $TTYnum
+    sleep $sec
+    chvt $cur_tty
+}
+
+ip_mon() {
+    read -p "Enter base IP address: " base_range
+    base_range_formated=$(echo $base_range | sed 's/\./ /g')
+    echo "Formatted base IP address: $base_range_formated"
+    read -p "Enter last IP in range: " max_range
+    max_range_formated=$(echo $max_range | sed 's/\./ /g')
+    echo "Formatted last IP address: $max_range_formated"
+    base_range_formated=(${base_range_formated})
+    max_range_formated=(${max_range_formated})
+    for i in {0..1}; do
+        command[$i]="(${base_range_formated[$i]}\.)"
+    done
+    # Loving the third octect
+    if [ ${base_range_formated[2]} != ${max_range_formated[2]} ]; then
+
+        # see if the 3rd octect is higher the 10
+        if [ ${max_range_formated[2]} -gt 10 ]; then
+            len=${#max_range_formated[2]}
+            # split up the 3rd octect
+            3rd_base_split=$(echo "${base_range_formated[2]}" | fold -w1)
+            3rd_base_set=$(${max_range_formated[2]} - 1) # To use in for loop
+            # 3rd_max_split=$(echo ${max_range_formated[2]} | fold -w1)
+        
+            for i in {$3rd_base_set..${max_range_formated[2]}}; do
+                3rd_octect+="($i[0-9]|"
+                done
+
+            # '(3[0-9]|4[0-9]|5[0-9]|60)\.'
+
+            # grep -E '192\.168\.(3[0-9]|4[0-9]|5[0-9]|60)\.(0|[1-9][0-9]{0,2}|[1-9][0-9]?|[0-9]{1,2}|[0-9]{1,3})' filename.log
+
+            # command[2]="([${base_range_formated[2]}-9]{1,"$len"}\.)"
+        elif [ ${max_range_formated[2]} == 10 ]; then
+            command[2]="([${base_range_formated[2]}-9]{0,2}\.)"
+        else
+            command[2]="([${base_range_formated[2]}-${max_range_formated[2]}]\.)"
+        fi
+    fi
+    last_octet_regex='([0-9]{0,3})'
+
+    full_pattern="${command[0]}${command[1]}${3rd_command[@]}$last_octet_regex"
+    echo -e "Full regex pattern: '$full_pattern'"
+    tail -f /var/log/*.log | grep -E --line-buffered "$full_pattern" | while read -r line; do
+        wall "Red Team IP Found: $line"
+        echo "$line" >>./logs/ip_detections.log
+    done >/dev/pts/2
+    read -p "The log mon should be running on /dev/tty$TTYNUM if not idk good luck"
+}
+
 ufw_setter() {
     saftey_check
     ports=("$@")
@@ -484,44 +555,10 @@ ufw_setter() {
     log_command "sudo ufw logging high"
     sudo ufw status verbose
     echo -e "${YELLOW}You can see logs in${ENDCOLOR} ${RED}/var/logs/ufw.log${ENDCOLOR}"
-    echo -e "Do you want to spawn a log monitor on another TTY? Y/N"
-    read -p "ip_mon"
+    echo -e "Do you want to spawn a log monitor on another TTY? Y/N: "
+    read ip_mon
     if [ "$ip_mon" == "Y" ]; then
-        clear
-        echo -e "${YELLOW}This will walk you through setting up another TTY for monitoring the ufw log file.${ENDCOLOR}"
-        echo -e "${YELLOW}After you enter the TTY number you want it will bring you to that TTY ${BOLDRED}you will have to login.${ENDCOLOR}"
-        echo -e "${YELLOW}If you cant switch back to your orginal TTY the script will attempt to bring you back after a timeout but you many have to use ctl+alt+fn#${ENDCOLOR}"
-        cur_tty=$(tty | cut -f3 -d"/" | cut -c 3-)
-        echo -e "Current TTY value" $cur_tty
-        read -p "Enter the just the TTY number you want not /dev..: " TTYnum
-        read -p "Enter the timeout in seconds before you are brought back to this tty:" sec
-        chvt $TTYnum
-        sleep $sec
-        chvt $cur_tty
-        pause_script
-        #        read -p "Are you logged in to TTY /dev/$TTYNUM? Y/N" loggedin
-        read -p "If you are logged in hit enter"
-        read -p "Enter base IP address: " base_range
-        base_range_formated=$(echo $base_range | sed 's/\./ /g')
-        echo "Formatted base IP address: $base_range_formated"
-        read -p "Enter last IP in range: " max_range
-        max_range_formated=$(echo $max_range | sed 's/\./ /g')
-        echo "Formatted last IP address: $max_range_formated"
-        base_range_formated=(${base_range_formated})
-        max_range_formated=(${max_range_formated})
-        # Set the first 2 octet regex as default assuming the first 2 octet will always be the same see testing.sh to decode what i was trying to do for all octets
-        for i in {0..1}; do
-            command[$i]="(${base_range_formated[$i]}\.)"
-        done
-        if [ ${max_range_formated[2]} != ${base_range_formated[2]} ]; then
-            command[2]="([${base_range_formated[2]}-${max_range_formated[2]}]\.)"
-        fi
-        last_octet_regex='([0-9]{1,3})'
-
-        full_pattern="${command[0]}${command[1]}${command[2]}$last_octet_regex"
-
-        echo "Full grep regex: '$full_pattern'"
-        grep -E "$full_pattern" testing,log
+        ip_mon
     else
         pause_script
         open_menu
@@ -864,7 +901,6 @@ backup() {
     done
 }
 # Start
-
 auto_os
 echo -e "${BLUE}OS detected:${ENDCOLOR}${RED} $os${ENDCOLOR}
 ${BLUE}Enter 1 to switch OS's or enter to continue${ENDCOLOR}"
