@@ -1,7 +1,7 @@
 #!/bin/bash
 clear
 
-source  onerun.env
+source onerun.env
 # source requirements.sh
 # source banner.sh
 if [ $skip_banner -eq 0 ]; then
@@ -17,7 +17,7 @@ ctl-c() {
     echo -e "${ENDCOLOR}" "Good luck, hopfully something worked"
     echo -e "              0000_____________0000________0000000000000000__000000000000000000+\n            00000000_________00000000______000000000000000__0000000000000000000+\n           000____000_______000____000_____000_______0000__00______0+\n          000______000_____000______000_____________0000___00______0+\n         0000______0000___0000______0000___________0000_____0_____0+\n         0000______0000___0000______0000__________0000___________0+\n         0000______0000___0000______0000_________000___0000000000+\n         0000______0000___0000______0000________0000+\n          000______000_____000______000________0000+\n           000____000_______000____000_______00000+\n            00000000_________00000000_______0000000+\n              0000_____________0000________000000007;"
     rm -rf menu_choice.txt logs backups
-    killall=$(ps -fC onerun.sh | awk 'NR==2 {print $2}')
+    killall=$(pgrep  'tail|onerun.sh')
     for i in $killall; do
         echo killing $i
         kill -9 $i
@@ -60,7 +60,6 @@ run_function_if_exists() {
 handle_error() {
     dialog --msgbox "$1" 10 40
 }
-
 
 # if [ $date == "01/25/25" ]; then
 #     echo "Good Luck"
@@ -482,48 +481,70 @@ rand_users_password() {
 
 setup_newtty() {
     clear
+    sec=10
     echo -e "${YELLOW}This will walk you through setting up another TTY for the funtion ${FUNCNAME[1]}.${ENDCOLOR}"
     echo -e "${YELLOW}After you enter the TTY number you want it will bring you to that TTY ${BOLDRED}you will have to login.${ENDCOLOR}"
     echo -e "${YELLOW}If you cant switch back to your orginal TTY the script will attempt to bring you back after a timeout but you many have to use ctl+alt+fn#${ENDCOLOR}"
-    cur_tty=$(tty | grep -o [0-9])
-    echo -e "Current TTY value" $cur_tty
-    read -p "Enter the just the TTY number you want not /dev..: " TTYnum
-    read -p "Enter the timeout in seconds before you are brought back to this tty: " sec
+    cur_tty_num=$(tty | grep -o [0-9])
+    cur_tty=$(tty | grep -oE 'pts|tty')
+    if [ "$cur_tty" == "tty" ]; then
+        echo "TTY is tty"
+        base_tty="/dev/tty"
+    elif [ "$cur_tty" == "pts" ]; then
+        echo "TTY is pts"
+        base_tty="/dev/pts/"
+    else
+        echo "Could not determine TTY"
+        read -p "Idk"
+    fi
+    read -p "Enter the just the TTY number you want not /dev..$base_tty" TTYnum
+    read -p "Enter the timeout in seconds ($sec) before you are brought back to this tty ($base_tty$cur_tty_num): " sec
     chvt $TTYnum
     sleep $sec
-    chvt $cur_tty
+    chvt $cur_tty_num
+
 }
 
 ip_mon() {
     echo -e "This will guide you through setting up a logger for red team IPs."
     echo -e "Enter the IP range of the red team"
-    read -p "Enter base IP address (192.168): " base_range
+    read -p "Enter base IP address don't put the second dot (192.168): " base_range
     base_range_formated=$(echo $base_range | sed 's/\./ /g')
     echo "Formatted base IP address: $base_range_formated"
     range='([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
     base_range_formated=(${base_range_formated})
     full_pattern="${base_range_formated[0]}\.${base_range_formated[1]}\.${range}\.${range}"
     echo -e "Full regex pattern: '$full_pattern'"
-    tail -n0 -f /var/log/*.log | grep -E --line-buffered "$full_pattern" | while read -r line; do
-        wall "Red Team IP Found: $line"
-        echo "$line" #>>./logs/ip_detections.log
-    done #>/dev/pts/0
+    read -p "Do you want atempt to log in another tty while keeping this one free? y/N: " new_tty
+    if [ $new_tty == "y" ]; then
+        setup_newtty
+    else
+        echo "Not setting up new TTY"
+    fi
+    {
+        tail -n0 -f /var/log/*.log | grep -E --line-buffered "$full_pattern" | while read -r line; do
+            wall "Red Team IP Found: $line $0"
+            # echo "$line" >> ./logs/ip_detections.log
+        done
+    } >/dev/tty3 2>&1 & # Run in the background "$base_tty$TTYnum"
 
-    # echo -e  "This will guide you through setting up a logger for red team IPs."
-    # echo -e "Enter the ip range of the red team"
-    # read -p "Enter base IP address: " base_range
-    # base_range_formated=$(echo $base_range | sed 's/\./ /g')
-    # echo "Formatted base IP address: $base_range_formated"
-    # range='([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
-    # base_range_formated=(${base_range_formated})
-    # full_pattern="${base_range_formated[0]}.${base_range_formated[1]}\.${range}\.${range}"
-    # echo -e "Full regex pattern: '$full_pattern'"
-    # tail -f /var/log/*.log | grep -E --line-buffered "$full_pattern" | while read -r line; do
-    #     wall "Red Team IP Found: $line"
-    #     echo "$line" >>./logs/ip_detections.log
-    # done #>/dev/pts/0
-    # read -p "The log mon should be running on /dev/tty$TTYNUM if not idk good luck"
+    echo "Logging started in TTY $base_tty$TTYnum"
 }
+
+# echo -e  "This will guide you through setting up a logger for red team IPs."
+# echo -e "Enter the ip range of the red team"
+# read -p "Enter base IP address: " base_range
+# base_range_formated=$(echo $base_range | sed 's/\./ /g')
+# echo "Formatted base IP address: $base_range_formated"
+# range='([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
+# base_range_formated=(${base_range_formated})
+# full_pattern="${base_range_formated[0]}.${base_range_formated[1]}\.${range}\.${range}"
+# echo -e "Full regex pattern: '$full_pattern'"
+# tail -f /var/log/*.log | grep -E --line-buffered "$full_pattern" | while read -r line; do
+#     wall "Red Team IP Found: $line"
+#     echo "$line" >>./logs/ip_detections.log
+# done #>/dev/pts/0
+# read -p "The log mon should be running on /dev/tty$TTYNUM if not idk good luck"
 
 ufw_setter() {
     saftey_check

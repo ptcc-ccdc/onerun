@@ -1,0 +1,34 @@
+metasploit
+nmap
+sqlmap
+cobalt strike
+aircrack-ng
+wireshark
+ettercap
+burpsuite
+john the ripper
+hashcat
+ngrok
+dnschef
+impersonator
+theharvester
+maltego
+hydra
+osint-spy
+setoolkit
+netcat
+social-engineer-toolkit
+msfvenom
+empire
+beef
+kali-linux
+evil-winrm
+powershell empire
+veil
+cuckoo sandbox
+remnux
+puppet
+ansible
+backdoor factory
+cryptcat
+pcap-dnsproxy
