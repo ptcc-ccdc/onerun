@@ -1,0 +1,41 @@
+#!/bin/bash
+remove_ssh () {
+    # change to ssh stuff
+    select OS in "Debian 8.5" "Fedora 21" "Ubuntu 14" "Ubuntu-Wkst" "Splunk" "CentOS 7"; do
+        case $OS in
+            "Debian 8.5" ) echo "Debian 8.5"; break;;
+            "Fedora 21" ) echo "Fedora 21"; break;;
+            "Ubuntu 14" ) echo "Ubuntu 14"; break;;
+            "Ubuntu-Wkst" ) echo "Ubuntu Workstation"; break;;
+            Splunk ) echo "Splunk"; break;;
+            "CentOS 7" ) echo "CentOS 7"; break;;
+            * ) echo "Invalid selection";;
+        esac
+    done
+}
+
+
+auto_os () {
+    os=$(grep DISTRIB_ID /etc/lsb-release | cut -c 12-)
+if [ $os ]; then
+    echo "Your OS is:" $os
+else
+    echo "Failed to determine OS"
+    man_os
+fi
+}
+
+
+man_os () {
+    select OS in "Debian8.5" "Fedora 21" "Ubuntu 14" "Ubuntu-Wkst" "Splunk" "CentOS 7"; do
+        case $OS in
+            "Debian8.5" ) echo "Debian j8.5"; break;;
+            "Fedora 21" ) echo "Fedora 21"; break;;
+            "Ubuntu 14" ) echo "Ubuntu 14"; break;;
+            "Ubuntu-Wkst" ) echo "Ubuntu Workstation"; break;;
+            Splunk ) echo "Splunk"; break;;
+            "CentOS 7" ) echo "CentOS 7"; break;;
+            * ) echo "Invalid selection";;
+        esac
+    done
+}
