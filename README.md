@@ -24,6 +24,21 @@ Cyber Defense Competitions are intense events where teams must defend their netw
 
 ### System Security
 
+1. **`firewall-setup.sh`** - This script helps you set up and configure a firewall on your Linux system to restrict incoming and outgoing network traffic based on predefined rules.
+
+2. **`ssh-hardening.sh`** - Use this script to harden your SSH server by configuring secure settings, such as disabling root login, enforcing strong ciphers, and setting up public key authentication.
+
+3. **`security-audit.sh`** - This script performs a security audit on your system by checking for common security vulnerabilities and providing recommendations for improvements.
+
+### User Management
+
+1. **`user-add.sh`** - Simplify user creation with this script. It prompts you for user details and creates the user account, sets a password, and adds the user to the necessary groups.
+
+2. **`user-delete.sh`** - Safely delete a user account using this script. It prompts you for the username and removes the user while preserving their home directory.
+
+### Crontab Automation
+
+1. **`cron-job.sh`** - Automate recurring tasks using crontab with this script. It guides you through scheduling tasks, specifying time intervals, and executing scripts at predefined times.
 
 ## Usage
 
