@@ -1,9 +1,11 @@
 #!/bin/bash
 clear
 
-source ./onerun.env
+source  onerun.env
+# source requirements.sh
+# source banner.sh
 if [ $skip_banner -eq 0 ]; then
-    banner
+    ./banner.sh
 else
     echo "Skipping banner"
 fi
@@ -11,16 +13,15 @@ fi
 trap ctl-c SIGINT
 
 ctl-c() {
+    clear
+    echo -e "${ENDCOLOR}" "Good luck, hopfully something worked"
+    echo -e "              0000_____________0000________0000000000000000__000000000000000000+\n            00000000_________00000000______000000000000000__0000000000000000000+\n           000____000_______000____000_____000_______0000__00______0+\n          000______000_____000______000_____________0000___00______0+\n         0000______0000___0000______0000___________0000_____0_____0+\n         0000______0000___0000______0000__________0000___________0+\n         0000______0000___0000______0000_________000___0000000000+\n         0000______0000___0000______0000________0000+\n          000______000_____000______000________0000+\n           000____000_______000____000_______00000+\n            00000000_________00000000_______0000000+\n              0000_____________0000________000000007;"
+    rm -rf menu_choice.txt logs backups
     killall=$(ps -fC onerun.sh | awk 'NR==2 {print $2}')
     for i in $killall; do
         echo killing $i
         kill -9 $i
     done
-    read -p wait
-    clear
-    echo -e "${ENDCOLOR}" "Good luck, hopfully something worked"
-    echo -e "              0000_____________0000________0000000000000000__000000000000000000+\n            00000000_________00000000______000000000000000__0000000000000000000+\n           000____000_______000____000_____000_______0000__00______0+\n          000______000_____000______000_____________0000___00______0+\n         0000______0000___0000______0000___________0000_____0_____0+\n         0000______0000___0000______0000__________0000___________0+\n         0000______0000___0000______0000_________000___0000000000+\n         0000______0000___0000______0000________0000+\n          000______000_____000______000________0000+\n           000____000_______000____000_______00000+\n            00000000_________00000000_______0000000+\n              0000_____________0000________000000007;"
-    rm -rf menu_choice.txt
     exit
 }
 
@@ -34,7 +35,7 @@ pause_script() {
 if [ "$EUID" -ne 0 ]; then
     echo -e "${YELLOW}Current user is not root some fuctions will not work. Current user is: ${ENDCOLOR}"$USER
 else
-    echo "Running this script as '$USER'"
+    echo -e "${GREEN}Current user is${ENDCOLOR} ${RED}root${ENDCOLOR}"
 fi
 pause_script
 clear
@@ -44,6 +45,8 @@ log_command() {
     echo -e "At $(date) the user $USER ran: $1" >>"$logpath/ran_commands.txt"
 
 }
+mkdir -p ./backups ./logs/user-logs
+log_command "mkdir -p ./backups ./logs/user-logs"
 
 # Function checker
 run_function_if_exists() {
@@ -58,8 +61,6 @@ handle_error() {
     dialog --msgbox "$1" 10 40
 }
 
-mkdir -p ./backups ./logs/user-logs
-log_command "mkdir -p ./backups ./logs/user-logs"
 
 # if [ $date == "01/25/25" ]; then
 #     echo "Good Luck"
@@ -268,7 +269,7 @@ Debian_main_menu() {
         10) run_function_if_exists "ip_mon" ;;
         0)
             rm -rf menu_choice.txt
-            exit
+            ctl-c
             ;;
         *) handle_error "Invalid selection" ;;
         esac
@@ -494,52 +495,34 @@ setup_newtty() {
 }
 
 ip_mon() {
-    read -p "Enter base IP address: " base_range
+    echo -e "This will guide you through setting up a logger for red team IPs."
+    echo -e "Enter the IP range of the red team"
+    read -p "Enter base IP address (192.168): " base_range
     base_range_formated=$(echo $base_range | sed 's/\./ /g')
     echo "Formatted base IP address: $base_range_formated"
-    read -p "Enter last IP in range: " max_range
-    max_range_formated=$(echo $max_range | sed 's/\./ /g')
-    echo "Formatted last IP address: $max_range_formated"
+    range='([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
     base_range_formated=(${base_range_formated})
-    max_range_formated=(${max_range_formated})
-    for i in {0..1}; do
-        command[$i]="(${base_range_formated[$i]}\.)"
-    done
-    # Loving the third octect
-    if [ ${base_range_formated[2]} != ${max_range_formated[2]} ]; then
-
-        # see if the 3rd octect is higher the 10
-        if [ ${max_range_formated[2]} -gt 10 ]; then
-            len=${#max_range_formated[2]}
-            # split up the 3rd octect
-            3rd_base_split=$(echo "${base_range_formated[2]}" | fold -w1)
-            3rd_base_set=$(${max_range_formated[2]} - 1) # To use in for loop
-            # 3rd_max_split=$(echo ${max_range_formated[2]} | fold -w1)
-        
-            for i in {$3rd_base_set..${max_range_formated[2]}}; do
-                3rd_octect+="($i[0-9]|"
-                done
-
-            # '(3[0-9]|4[0-9]|5[0-9]|60)\.'
-
-            # grep -E '192\.168\.(3[0-9]|4[0-9]|5[0-9]|60)\.(0|[1-9][0-9]{0,2}|[1-9][0-9]?|[0-9]{1,2}|[0-9]{1,3})' filename.log
-
-            # command[2]="([${base_range_formated[2]}-9]{1,"$len"}\.)"
-        elif [ ${max_range_formated[2]} == 10 ]; then
-            command[2]="([${base_range_formated[2]}-9]{0,2}\.)"
-        else
-            command[2]="([${base_range_formated[2]}-${max_range_formated[2]}]\.)"
-        fi
-    fi
-    last_octet_regex='([0-9]{0,3})'
-
-    full_pattern="${command[0]}${command[1]}${3rd_command[@]}$last_octet_regex"
+    full_pattern="${base_range_formated[0]}\.${base_range_formated[1]}\.${range}\.${range}"
     echo -e "Full regex pattern: '$full_pattern'"
-    tail -f /var/log/*.log | grep -E --line-buffered "$full_pattern" | while read -r line; do
+    tail -n0 -f /var/log/*.log | grep -E --line-buffered "$full_pattern" | while read -r line; do
         wall "Red Team IP Found: $line"
-        echo "$line" >>./logs/ip_detections.log
-    done >/dev/pts/2
-    read -p "The log mon should be running on /dev/tty$TTYNUM if not idk good luck"
+        echo "$line" #>>./logs/ip_detections.log
+    done #>/dev/pts/0
+
+    # echo -e  "This will guide you through setting up a logger for red team IPs."
+    # echo -e "Enter the ip range of the red team"
+    # read -p "Enter base IP address: " base_range
+    # base_range_formated=$(echo $base_range | sed 's/\./ /g')
+    # echo "Formatted base IP address: $base_range_formated"
+    # range='([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
+    # base_range_formated=(${base_range_formated})
+    # full_pattern="${base_range_formated[0]}.${base_range_formated[1]}\.${range}\.${range}"
+    # echo -e "Full regex pattern: '$full_pattern'"
+    # tail -f /var/log/*.log | grep -E --line-buffered "$full_pattern" | while read -r line; do
+    #     wall "Red Team IP Found: $line"
+    #     echo "$line" >>./logs/ip_detections.log
+    # done #>/dev/pts/0
+    # read -p "The log mon should be running on /dev/tty$TTYNUM if not idk good luck"
 }
 
 ufw_setter() {
