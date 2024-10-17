@@ -1,6 +1,5 @@
 #!/bin/bash
 clear
-
 source onerun.env
 # source requirements.sh
 # source banner.sh
@@ -14,10 +13,13 @@ trap ctl-c SIGINT
 
 ctl-c() {
     clear
+    chattr +i $backuppath
     echo -e "${ENDCOLOR}" "Good luck, hopfully something worked"
     echo -e "              0000_____________0000________0000000000000000__000000000000000000+\n            00000000_________00000000______000000000000000__0000000000000000000+\n           000____000_______000____000_____000_______0000__00______0+\n          000______000_____000______000_____________0000___00______0+\n         0000______0000___0000______0000___________0000_____0_____0+\n         0000______0000___0000______0000__________0000___________0+\n         0000______0000___0000______0000_________000___0000000000+\n         0000______0000___0000______0000________0000+\n          000______000_____000______000________0000+\n           000____000_______000____000_______00000+\n            00000000_________00000000_______0000000+\n              0000_____________0000________000000007;"
-    rm -rf menu_choice.txt logs backups
-    killall=$(pgrep  'tail|onerun.sh')
+    if [ $dry_run -eq 1 ]; then
+        rm -rf menu_choice.txt logs backups
+    fi
+    killall=$(pgrep 'tail|onerun.sh')
     for i in $killall; do
         echo killing $i
         kill -9 $i
@@ -30,6 +32,8 @@ pause_script() {
     read -r -p "Press Enter to continue..."
     clear
 }
+echo -e "${GREEN}Logs will be stored in:${ENDCOLOR} $logpath"
+echo -e "${GREEN}Auto backups will be stored in:${ENDCOLOR} $backuppath"
 
 # User check
 if [ "$EUID" -ne 0 ]; then
@@ -45,8 +49,9 @@ log_command() {
     echo -e "At $(date) the user $USER ran: $1" >>"$logpath/ran_commands.txt"
 
 }
-mkdir -p ./backups ./logs/user-logs
-log_command "mkdir -p ./backups ./logs/user-logs"
+
+mkdir -p $backuppath/backups $logpath/user-logs $logpath/ssh
+log_command "mkdir -p $onerun_root/backups $onerun_root/logs/user-logs"
 
 # Function checker
 run_function_if_exists() {
@@ -230,94 +235,98 @@ redhat_main_menu() {
     done
 }
 
-Debian_main_menu() {
-    while true; do
-        # Dialog menu
-        dialog --clear --title "Debian Main Menu" --menu "Select an option:" 15 50 9 \
-            1 "Remove ssh" \
-            2 "Change ALL users passwords" \
-            3 "Randomize all account passwords" \
-            4 "Check users that can login" \
-            5 "users w/o passwords" \
-            6 "Check Firewall" \
-            7 "Remove users .ssh" \
-            8 "Backup dirs" \
-            9 "Magicx" \
-            10 "Log IP Monitor" \
-            0 "Exit" 2>menu_choice.txt
-
-        # Read the user's choice
-        CHOICE=$(<menu_choice.txt)
-        clear
-
-        case $CHOICE in
-        1) run_function_if_exists "deb_remove_ssh" ;;
-        2) run_function_if_exists "change_all_pass" ;;
-        3) run_function_if_exists "rand_users_password" ;;
-        4)
-            cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin | cut -f1 -d":" >$logpath/user-logs/users-$(date "+%H:%M").txt
-            cat $logpath/user-logs/users-$(date "+%H:%M").txt
-            read -p "These users can most likely login. Check them out"
-            open_menu
-            ;;
-        5) run_function_if_exists "users_no_pass" ;;
-        6) run_function_if_exists "deb_firewall_check" ;;
-        7) run_function_if_exists "remove_.ssh" ;;
-        8) run_function_if_exists "backup" ;;
-        9) run_function_if_exists "learning_the_hard_way" ;;
-        10) run_function_if_exists "ip_mon" ;;
-        0)
-            rm -rf menu_choice.txt
-            ctl-c
-            ;;
-        *) handle_error "Invalid selection" ;;
-        esac
-    done
-}
-
 # Debian_main_menu() {
-#     clear
-#     echo "OS is" "$os"
-#     select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "testing"; do
-#         case $ubuntu_option in
-#         "Remove ssh") run_function_if_exists "deb_remove_ssh" ;;
-#         "Change ALL users passwords")
-#             run_function_if_exists "change_all_pass"
-#             open_menu
-#             ;;
-#         "Check users that can login")
-#             cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin | cut -f1 -d":"
-#             pause_script
-#             open_menu
-#             ;; # cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin | cut -f1 -d":" # awk -F: ' {print $1, $7}' /etc/passwd # notes.sh
-#         "Check Firewall") run_function_if_exists "deb_firewall_check" ;;
-#         "Enter services")
-#             echo "Should auto find service but have option to add man"
-#             break
-#             ;;
-#         "users w/o passwords") run_function_if_exists "users_no_pass" ;;
-#         "Remove .ssh")
-#             run_function_if_exists "remove_.ssh"
-#             open_menu
-#             ;;
-#         "Backup dirs")
-#             run_function_if_exists "backup"
-#             open_menu
-#             ;;
-#         "Magicx") run_function_if_exists "learning_the_hard_way" ;;
+#     while true; do
+#         # Dialog menu
+#         dialog --clear --title "Debian Main Menu" --menu "Select an option:" 15 50 9 \
+#             1 "Remove ssh" \
+#             2 "Change ALL users passwords" \
+#             3 "Randomize all account passwords" \
+#             4 "Check users that can login" \
+#             5 "users w/o passwords" \
+#             6 "Check Firewall" \
+#             7 "Remove users .ssh" \
+#             8 "Backup dirs" \
+#             9 "Magicx" \
+#             10 "Log IP Monitor" \
+#             0 "Exit" 2>menu_choice.txt
 
-#         "testing") run_function_if_exists "testingfunc" ;;
+#         # Read the user's choice
+#         CHOICE=$(<menu_choice.txt)
+#         clear
 
-#         *)
-#             echo "Invalid selection"
-#             sleep .7
-#             clear
-#             Debian_main_menu
+#         case $CHOICE in
+#         1) run_function_if_exists "deb_remove_ssh" ;;
+#         2) run_function_if_exists "change_all_pass" ;;
+#         3) run_function_if_exists "rand_users_password" ;;
+#         4)
+#             cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin | cut -f1 -d":" >$logpath/user-logs/users-$(date "+%H:%M").txt
+#             cat $logpath/user-logs/users-$(date "+%H:%M").txt
+#             read -p "These users can most likely login. Check them out"
+#             open_menu
 #             ;;
+#         5) run_function_if_exists "users_no_pass" ;;
+#         6) run_function_if_exists "deb_firewall_check" ;;
+#         7) run_function_if_exists "remove_.ssh" ;;
+#         8) run_function_if_exists "backup" ;;
+#         9) run_function_if_exists "learning_the_hard_way" ;;
+#         10) run_function_if_exists "ip_mon" ;;
+#         0)
+#             rm -rf menu_choice.txt
+#             ctl-c
+#             ;;
+#         *) handle_error "Invalid selection" ;;
 #         esac
 #     done
-
 # }
+
+Debian_main_menu() {
+    clear
+    echo "OS is" "$os"
+    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "Log IP Monitor"; do
+        case $ubuntu_option in
+        "Remove ssh") run_function_if_exists "deb_remove_ssh" ;;
+        "Change ALL users passwords")
+            run_function_if_exists "change_all_pass"
+            open_menu
+            ;;
+        "Check users that can login")
+            cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin | cut -f1 -d":"
+            pause_script
+            open_menu
+            ;; # cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin | cut -f1 -d":" # awk -F: ' {print $1, $7}' /etc/passwd # notes.sh
+        "Check Firewall") run_function_if_exists "deb_firewall_check" ;;
+        "Enter services")
+            echo "Should auto find service but have option to add man"
+            break
+            ;;
+        "users w/o passwords") run_function_if_exists "users_no_pass" ;;
+        "Remove .ssh")
+            run_function_if_exists "remove_.ssh"
+            open_menu
+            ;;
+        "Backup dirs")
+            run_function_if_exists "backup"
+            open_menu
+            ;;
+        "Log IP Monitor")
+            run_function_if_exists "ip_mon"
+            open_menu
+            ;;
+        "Magicx") run_function_if_exists "learning_the_hard_way" ;;
+
+        "testing") run_function_if_exists "testingfunc" ;;
+
+        *)
+            echo "Invalid selection"
+            sleep .7
+            clear
+            Debian_main_menu
+            ;;
+        esac
+    done
+
+}
 
 remove_.ssh() {
     saftey_check

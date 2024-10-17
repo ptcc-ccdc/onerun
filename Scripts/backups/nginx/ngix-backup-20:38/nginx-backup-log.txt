@@ -1,1 +1,0 @@
-This is what was ran: cp -r /usr/share/nginx/html /etc/nginx ./backups/nginx/ngix-backup-20:38
