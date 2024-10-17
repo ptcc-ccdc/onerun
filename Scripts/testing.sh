@@ -1,4 +1,4 @@
-# #!/bin/bash
+#!/bin/bash
 # clear
 # mkdir -p ./logs
 # logpath=./logs
@@ -263,39 +263,39 @@
 
 # log_command "mkdir -p $backuppath/nginx/ngix-backup-$(date "+%H:%M")"; log_command "cp -r /usr/share/nginx/html /etc/nginx $backuppath/nginx/ngix-backup-$(date "+%H:%M")";
 
-read -p "Enter base IP address: " base_range
-base_range_formated=$(echo $base_range | sed 's/\./ /g')
-echo "Formatted base IP address: $base_range_formated"
-read -p "Enter last IP in range: " max_range
-max_range_formated=$(echo $max_range | sed 's/\./ /g')
-echo "Formatted last IP address: $max_range_formated"
-# base_range_formated=(${base_range_formated})
-# max_range_formated=(${max_range_formated})
-for i in {0..1}; do
-    command[$i]="(${base_range_formated[$i]}\.)"
-done
+# read -p "Enter base IP address: " base_range
+# base_range_formated=$(echo $base_range | sed 's/\./ /g')
+# echo "Formatted base IP address: $base_range_formated"
+# read -p "Enter last IP in range: " max_range
+# max_range_formated=$(echo $max_range | sed 's/\./ /g')
+# echo "Formatted last IP address: $max_range_formated"
+# # base_range_formated=(${base_range_formated})
+# # max_range_formated=(${max_range_formated})
+# for i in {0..1}; do
+#     command[$i]="(${base_range_formated[$i]}\.)"
+# done
 
-if [ ${max_range_formated[2]} != ${base_range_formated[2]} ]; then
-    # see if the 3rd octect is higher the 10
-    if [ ${max_range_formated[2]} -gt 10 ]; then
-        len=${#max_range_formated[2]}
-        echo $len
-        command[2]="([${base_range_formated[2]}-9]{1,"$len"}\.)"
-    elif [ ${max_range_formated[2]} == 10 ]; then
-        command[2]="([${base_range_formated[2]}-9]{1,2}\.)"
-    else
-        command[2]="([${base_range_formated[2]}-${max_range_formated[2]}]\.)"
-    fi
-fi
-last_octet_regex='([0-9]{1,3})'
+# if [ ${max_range_formated[2]} != ${base_range_formated[2]} ]; then
+#     # see if the 3rd octect is higher the 10
+#     if [ ${max_range_formated[2]} -gt 10 ]; then
+#         len=${#max_range_formated[2]}
+#         echo $len
+#         command[2]="([${base_range_formated[2]}-9]{1,"$len"}\.)"
+#     elif [ ${max_range_formated[2]} == 10 ]; then
+#         command[2]="([${base_range_formated[2]}-9]{1,2}\.)"
+#     else
+#         command[2]="([${base_range_formated[2]}-${max_range_formated[2]}]\.)"
+#     fi
+# fi
+# last_octet_regex='([0-9]{1,3})'
 
-full_pattern="${command[0]}${command[1]}${command[2]}$last_octet_regex"
+# full_pattern="${command[0]}${command[1]}${command[2]}$last_octet_regex"
 
-echo "Full regex pattern: '$full_pattern'"
+# echo "Full regex pattern: '$full_pattern'"
 
-tail -f /var/log/*.log | grep -E --line-buffered "$full_pattern" | while read -r line; do
-    wal "Red Team IP Found: $line"
-done
+# tail -f /var/log/*.log | grep -E --line-buffered "$full_pattern" | while read -r line; do
+#     wal "Red Team IP Found: $line"
+# done
 
 # tail -f testing,log all "Matched: $line"
 
@@ -332,3 +332,57 @@ done
 # grep -E '192\.168\.1\.([0-9]{1,3})' filename
 
 # grep -E '192\.168\.10\.([1-9][0-9]?|[1-9]|100)' filename
+
+# cur_tty=$(tty | grep -oE 'pts|tty')
+# if [ "$cur_tty" == "dev" ]; then
+#     echo "TTY is dev"
+#     base_tty="/dev/pts/"
+# elif [ "$cur_tty" == "pts" ]; then
+#     echo "TTY is pts" 
+#     base_tty="/dev/tty"
+# else echo "Could not determine TTY"
+# fi
+    # tty_num=$(tty | grep -o [0-9])
+    # cur_tty=$(tty | grep -oE 'pts|tty')
+    # if [ "$cur_tty" == "dev" ]; then
+    #     echo "TTY is dev"
+    #     base_tty="/dev/tty"
+    # elif [ "$cur_tty" == "pts" ]; then
+    #     echo "TTY is pts" 
+    #     base_tty="/dev/pts/"
+    # else echo "Could not determine TTY"
+    # fi
+    # read -p "Enter the just the TTY number you want not /dev..$base_tty" TTYnum
+    # read -p "Enter the timeout in seconds (10) before you are brought back to this tty ($base_tty$tty_num): " sec
+setup_newtty() {
+    clear
+    sec=10
+    echo -e "${YELLOW}This will walk you through setting up another TTY for the funtion ${FUNCNAME[1]}.${ENDCOLOR}"
+    echo -e "${YELLOW}After you enter the TTY number you want it will bring you to that TTY ${BOLDRED}you will have to login.${ENDCOLOR}"
+    echo -e "${YELLOW}If you cant switch back to your orginal TTY the script will attempt to bring you back after a timeout but you many have to use ctl+alt+fn#${ENDCOLOR}"
+    cur_tty_num=$(tty | grep -o [0-9])
+    cur_tty=$(tty | grep -oE 'pts|tty')
+    if [ "$cur_tty" == "tty" ]; then
+        echo "TTY is tty"
+        base_tty="/dev/tty"
+    elif [ "$cur_tty" == "pts" ]; then
+        echo "TTY is pts" 
+        base_tty="/dev/pts/"
+    else echo "Could not determine TTY"
+        read -p 
+    fi
+    read -p "Enter the just the TTY number you want not /dev..$base_tty" TTYnum
+    read -p "Enter the timeout in seconds ($sec) before you are brought back to this tty ($base_tty$cur_tty_num): " sec
+    chvt $TTYnum
+    sleep $sec
+    chvt $cur_tty_num
+    
+}
+
+    read -p "Do you want atempt to log in another tty while keeping this one free? y/N: " new_tty
+    if [ "$new_tty" == "y" ]; then
+        setup_newtty
+
+    else
+        echo "Not setting up new TTY"
+    fi
