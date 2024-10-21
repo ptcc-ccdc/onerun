@@ -17,7 +17,7 @@ ctl-c() {
     echo -e "${ENDCOLOR}" "Good luck, hopfully something worked"
     echo -e "              0000_____________0000________0000000000000000__000000000000000000+\n            00000000_________00000000______000000000000000__0000000000000000000+\n           000____000_______000____000_____000_______0000__00______0+\n          000______000_____000______000_____________0000___00______0+\n         0000______0000___0000______0000___________0000_____0_____0+\n         0000______0000___0000______0000__________0000___________0+\n         0000______0000___0000______0000_________000___0000000000+\n         0000______0000___0000______0000________0000+\n          000______000_____000______000________0000+\n           000____000_______000____000_______00000+\n            00000000_________00000000_______0000000+\n              0000_____________0000________000000007;"
     if [ $dry_run -eq 1 ]; then
-        rm -rf menu_choice.txt logs backups
+        rm -rf menu_choice.txt logs backups installed_potentially_malicious.txt installed_services.txt
     fi
     killall=$(pgrep 'tail|onerun.sh')
     for i in $killall; do
@@ -130,8 +130,92 @@ auto_run() {
     echo -e "${GREEN}If any keys have been found they have been logged to${ENDCOLOR} $logpath/ssh/found_keys-DATE.txt and removed.
     alterd unusable copies have been made in $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
     pause_script
+    rm -rf installed_potentially_malicious.txt installed_services.txt
+    servicectl_check
     rand_users_password
     clear
+}
+
+servicectl_check() {
+    if command -v systemctl &>/dev/null; then
+        # echo "System has systemctl"
+        servicectl="systemctl"
+    elif command -v service &>/dev/null; then
+        # echo "System has service"
+        servicectl="service"
+    else
+        echo "Service control method not found, defaulting to service"
+        servicectl="service"
+    fi
+
+    if [ -d /etc/init.d ]; then
+        echo -e "${YELLOW}Path /etc/init.d exists, take a look to see what there is${ENDCOLOR}"
+    fi
+}
+
+potentially_malicious_services() {
+    for i in ${potentially_malicious[@]}; do
+        sleep .2
+        command -v $i >/dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            echo "$i is installed"
+            echo "$i" >>installed_potentially_malicious.txt
+        else
+            echo "$i is not installed"
+        fi
+    done
+    echo -e "${GREEN}End of malicious services${ENDCOLOR}"
+    pause_script
+}
+
+common_services_checker() {
+
+    for i in ${service_detection[@]}; do
+        sleep .2
+        command -v $i >/dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            echo "$i is installed"
+            echo "$i" >>installed_services.txt
+
+        else
+            echo "$i is not installed"
+        fi
+    done
+    for i in ${IMPORTANT_SERVICES[@]}; do
+        if [[ "${installed_services[@]}" =~ "$i" ]]; then
+            echo -e "${GREEN}$i found this is an important service check it out"
+            FOUND_IMPORTANT=()
+            FOUND_IMPORTANT+=($i)
+        else
+            echo "$i not found"
+        fi
+    done
+    pause_script
+}
+
+service_status() {
+    installed_services=$(cat installed_services.txt)
+    installed_services=(${installed_services})
+
+    for i in ${installed_services[@]}; do
+
+        if [ $servicectl == "systemctl" ]; then
+            $servicectl status $i | grep running >/dev/null 2>&1
+            if [ $? -eq 0 ]; then
+                echo -e "${YELLO}$i${ENDCOLOR} is running"
+            else
+                echo -e "${GREEN}$i${ENDCOLOR} is not running"
+            fi
+        elif [ $servicectl == "service" ]; then
+            $servicectl $i status | grep running >/dev/null 2>&1
+            if [ $? -eq 0 ]; then
+                echo -e "${YELLO}$i${ENDCOLOR} is running"
+            else
+                echo -e "${GREEN}$i${ENDCOLOR} is not running"
+            fi
+        fi
+    done
+
 }
 
 man_os() {
@@ -200,7 +284,7 @@ open_menu() {
 
 redhat_main_menu() {
     echo "OS is" "$os"
-    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords"; do
+    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Find services"; do
         case $ubuntu_option in
         "Remove ssh")
             red_remove_ssh
@@ -218,8 +302,10 @@ redhat_main_menu() {
             red_firewall_check
             open_menu
             ;;
-        "Enter services")
-            echo "Should auto find service but have option to add man"
+        "Find services")
+            potentially_malicious_services
+            common_services_checker
+            # echo "Should auto find service but have option to add man"
             break
             ;;
         "Magicx") learning_the_hard_way ;;
@@ -234,7 +320,7 @@ redhat_main_menu() {
         esac
     done
 }
-
+## If the systems have dialog you can uncommnet this for a nicer menu on deb no added functionality
 # Debian_main_menu() {
 #     while true; do
 #         # Dialog menu
@@ -283,7 +369,7 @@ redhat_main_menu() {
 Debian_main_menu() {
     clear
     echo "OS is" "$os"
-    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "Log IP Monitor"; do
+    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "Log IP Monitor" "Find services"; do
         case $ubuntu_option in
         "Remove ssh") run_function_if_exists "deb_remove_ssh" ;;
         "Change ALL users passwords")
@@ -312,6 +398,12 @@ Debian_main_menu() {
         "Log IP Monitor")
             run_function_if_exists "ip_mon"
             open_menu
+            ;;
+        "Find services")
+            potentially_malicious_services
+            common_services_checker
+            # echo "Should auto find service but have option to add man"
+            break
             ;;
         "Magicx") run_function_if_exists "learning_the_hard_way" ;;
 
@@ -463,6 +555,7 @@ rand_users_password() {
     saftey_check
     clear
     echo -e "${RED}This will change ALL users passwords make sure you change any account password before you log out.${ENDCOLOR}"
+    echo -e "${RED}Should proably make sure this accounts aren't tied to a email account"
     echo -e "${YELLOW}Press enter to go back or 1 to start${ENDCOLOR}"
     read -r ask_rand
     clear
@@ -480,9 +573,13 @@ rand_users_password() {
                 echo -e "${GREEN}Changed $user's password${ENDCOLOR}"
             fi
         done
+        echo -e "${GREEN}Change your current password${ENDCOLOR}"
+        passwd
         pause_script
         open_menu
     else
+        echo -e "${YELLOW}NOT changing any passwords${ENDCOLOR}"
+        slee .3
         clear
         open_menu
     fi
@@ -509,7 +606,7 @@ setup_newtty() {
     read -p "Enter the just the TTY number you want not /dev..$base_tty" TTYnum
     read -p "Enter the timeout in seconds ($sec) before you are brought back to this tty ($base_tty$cur_tty_num): " sec
     chvt $TTYnum
-    sleep $sec
+    sleep "$sec"
     chvt $cur_tty_num
 
 }
@@ -524,7 +621,7 @@ ip_mon() {
     base_range_formated=(${base_range_formated})
     full_pattern="${base_range_formated[0]}\.${base_range_formated[1]}\.${range}\.${range}"
     echo -e "Full regex pattern: '$full_pattern'"
-    read -p "Do you want atempt to log in another tty while keeping this one free? y/N: " new_tty
+    read -p "Do you want atempt to log in another tty while keeping this one free untill quit? y/N: " new_tty
     if [ $new_tty == "y" ]; then
         setup_newtty
     else
@@ -535,7 +632,7 @@ ip_mon() {
             wall "Red Team IP Found: $line $0"
             # echo "$line" >> ./logs/ip_detections.log
         done
-    } >/dev/tty3 2>&1 & # Run in the background "$base_tty$TTYnum"
+    } >"$base_tty$TTYnum" 2>&1 & # Run in the background "$base_tty$TTYnum"
 
     echo "Logging started in TTY $base_tty$TTYnum"
 }
