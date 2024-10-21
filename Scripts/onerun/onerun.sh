@@ -187,11 +187,11 @@ common_services_checker() {
 
     for i in ${installed_services[@]}; do
         if [[ "${IMPORTANT_SERVICES[@]}" =~ "$i" ]]; then
-            echo -e "${GREEN}$i found this is an important service check it out"
+            echo -e "${GREEN}$i was found this is an important service check it out"
             FOUND_IMPORTANT=()
             FOUND_IMPORTANT+=($i)
-        else
-            echo "$i not found"
+        # else
+        #     echo "$i not found"
         fi
     done
     pause_script
