@@ -181,8 +181,8 @@ common_services_checker() {
             echo "$i is not installed"
         fi
     done
-    for i in ${IMPORTANT_SERVICES[@]}; do
-        if [[ "${installed_services[@]}" =~ "$i" ]]; then
+    for i in ${installed_services[@]}; do
+        if [[ "$i" =~ "$IMPORTANT_SERVICES" ]]; then
             echo -e "${GREEN}$i found this is an important service check it out"
             FOUND_IMPORTANT=()
             FOUND_IMPORTANT+=($i)

@@ -78,13 +78,12 @@ servicectl_check
 common_services_checker
 clear
 service_status
-for i in ${IMPORTANT_SERVICES[@]}; do
-    if [[ "${installed_services[@]}" =~ "$i" ]]; then
-        echo "$i found"
+
+SERVICE_TO_CHECK=("nginx" "docker")
+for i in ${SERVICE_TO_CHECK[@]}; do
+    if [[ "${installed_services[@]}" =~ " ${SERVICE_TO_CHECK} " ]]; then
+        echo "${SERVICE_TO_CHECK} found"
     else
-        echo "$i not found"
+        echo "${SERVICE_TO_CHECK} not found"
     fi
 done
-
-
-
