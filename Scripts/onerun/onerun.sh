@@ -18,7 +18,7 @@ ctl-c() {
     if [ $dry_run -eq 1 ]; then
         rm -rf menu_choice.txt logs backups installed_potentially_malicious.txt installed_services.txt
     fi
-    chattr +i $backuppath
+    chattr +i $backuppath >/dev/null 2>&1
     killall=$(pgrep 'tail|onerun.sh')
     for i in $killall; do
         echo killing $i
