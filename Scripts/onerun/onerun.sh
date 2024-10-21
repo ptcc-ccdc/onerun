@@ -100,40 +100,41 @@ testingfunxc() {
     read -p -e "This is should match what you wanted to do"
 }
 
-# if [ $saftey -eq 0 ]; then
-#     echo -e "${BOLDRED}The safty variable is NOT set, hitting enter WILL auto run scripts${ENDCOLOR}"
-#     pause_script
-#     auto_run
-# else
-#     echo -e "${BOLDRED}The safty variable is set, not running backround scripts${ENDCOLOR}"
-# fi
+if [ $saftey -eq 0 ]; then
+    echo -e "${BOLDRED}The safty variable is NOT set, hitting enter WILL auto run scripts${ENDCOLOR}"
+    pause_script
+    auto_run
+else
+    echo -e "${BOLDRED}The safty variable is set, not running automagic scripts${ENDCOLOR}"
+fi
 
 auto_run() {
     saftey_check
-    echo -e "${GREEN}Logs will be stored in${ENDCOLOR} $logpath/"
     echo -e "${GREEN}Looking for ssh authorized_keys...${ENDCOLOR}"
     find / -type f -name "authorized_keys" 2>/dev/null >$logpath/ssh/found-ssh-keys-"$(date "+%H:%M")".txt
     keys_path=$(find / -type f -name "authorized_keys" 2>/dev/null)
     for path in $keys_path; do
         cp "$path" $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
-        log_command "mv $path $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
         echo -e "${RED}Key found:${ENDCOLOR} ${RED}$path${ENDCOLOR}"
         echo "$path:" >>$logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
-        log_command "echo $path: >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
         sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt >>$logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
-        log_command "sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
         rm -rf $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
-        log_command "rm -rf $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
         rm -rf "$path"
+        log_command "mv $path $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
+        log_command "echo $path: >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
+        log_command "sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
+        log_command "rm -rf $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
         log_command "rm -rf $path"
     done
     echo -e "${GREEN}If any keys have been found they have been logged to${ENDCOLOR} $logpath/ssh/found_keys-DATE.txt and removed.
     alterd unusable copies have been made in $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
     pause_script
     rm -rf installed_potentially_malicious.txt installed_services.txt
+    if [ -e "./installed_services.txt" ]; then
+        rand_users_password
+        clear
+    fi
     servicectl_check
-    rand_users_password
-    clear
 }
 
 servicectl_check() {
