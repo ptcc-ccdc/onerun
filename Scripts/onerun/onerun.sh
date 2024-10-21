@@ -306,7 +306,7 @@ redhat_main_menu() {
             potentially_malicious_services
             common_services_checker
             # echo "Should auto find service but have option to add man"
-            break
+            open_menu
             ;;
         "Magicx") learning_the_hard_way ;;
         "users w/o passwords") users_no_pass ;;
@@ -403,7 +403,7 @@ Debian_main_menu() {
             potentially_malicious_services
             common_services_checker
             # echo "Should auto find service but have option to add man"
-            break
+            open_menu
             ;;
         "Magicx") run_function_if_exists "learning_the_hard_way" ;;
 
