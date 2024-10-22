@@ -62,3 +62,4 @@ promtail
 fluentd
 rsyslog
 netcat
+telnet
