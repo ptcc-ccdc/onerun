@@ -289,7 +289,7 @@ open_menu() {
 
 redhat_main_menu() {
     echo "OS is" "$os"
-    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Find services"; do
+    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Find services" "Services Status"; do
         case $ubuntu_option in
         "Remove ssh")
             red_remove_ssh
@@ -313,6 +313,10 @@ redhat_main_menu() {
             # echo "Should auto find service but have option to add man"
             open_menu
             ;;
+        "Services Status")
+            service_status
+            open_menu
+            ;;             
         "Magicx") learning_the_hard_way ;;
         "users w/o passwords") users_no_pass ;;
             #  "CentOS 7" ) echo "CentOS 7"; break;;
@@ -374,7 +378,7 @@ redhat_main_menu() {
 Debian_main_menu() {
     clear
     echo "OS is" "$os"
-    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "Log IP Monitor" "Find services"; do
+    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "Log IP Monitor" "Find services" "Services Status"; do
         case $ubuntu_option in
         "Remove ssh") run_function_if_exists "deb_remove_ssh" ;;
         "Change ALL users passwords")
@@ -410,6 +414,10 @@ Debian_main_menu() {
             # echo "Should auto find service but have option to add man"
             open_menu
             ;;
+        "Services Status")
+            service_status
+            open_menu
+            ;;        
         "Magicx") run_function_if_exists "learning_the_hard_way" ;;
 
         "testing") run_function_if_exists "testingfunc" ;;
