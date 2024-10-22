@@ -207,6 +207,7 @@ service_status() {
     installed_services=$(cat installed_services.txt)
     installed_services=(${installed_services})
     for i in "${installed_services[@]}"; do
+        sleep .3
         if [[ $servicectl == "systemctl" ]]; then
             $servicectl status "$i" | grep "running" >/dev/null 2>&1
             if [[ $? -eq 0 ]]; then
@@ -223,8 +224,8 @@ service_status() {
             fi
         fi
     done
+    pause_script
 }
-
 
 man_os() {
     select os in "Debian" "Ubuntu" "Fedora" "Splunk" "CentOS 7"; do
