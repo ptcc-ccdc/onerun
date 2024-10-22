@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zone>
+  <short>Public</short>
+  <description>For use in untrusted public networks. Only HTTP and HTTPS connections are allowed.</description>
+  <port protocol="tcp" port="80"/>
+  <port protocol="tcp" port="443"/>
+  <log denied="all"/>
+  <masquerade/>
+  <target>DROP</target>
+</zone>

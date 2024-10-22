@@ -1,6 +1,11 @@
 #!/bin/bash
 clear
-source onerun.env
+
+if [ -f ./onerun.env ]; then
+    source onerun.env
+else echo "You need to run this script in the root dir (./onerun.sh)"
+    exit 69
+fi
 # source requirements.sh
 # source banner.sh
 if [ $skip_banner -eq 0 ]; then
@@ -563,6 +568,7 @@ users_no_pass() {
 }
 
 change_all_pass() {
+    saftey_check
     clear
     echo "This will prompt you to change ALL users passwords.
     enter 1 to continue or enter to go back to main menu"
@@ -695,7 +701,7 @@ ufw_setter() {
     log_command "sudo ufw logging high"
     sudo ufw status verbose
     echo -e "${YELLOW}You can see logs in${ENDCOLOR} ${RED}/var/logs/ufw.log${ENDCOLOR}"
-    echo -e "Do you want to spawn a log monitor on another TTY? Y/N: "
+    echo -e "Do you want to spawn a IP monitor? y/N: "
     read ip_mon
     if [ "$ip_mon" == "Y" ]; then
         ip_mon
@@ -710,19 +716,22 @@ deb_firewall_check() {
         echo "UFW installed would you like to reset and open set ports or custom ports?
     1. set ports
     2. custom ports
-    Enter to skip"
+    Enter to do nothing"
         read -r ufw_set
         if [ "$ufw_set" = 1 ]; then
             echo "Restting UFW..."
             sudo ufw --force reset
-            log_command "sudo ufw --force reset"
-            echo "Enableing UFW"
+            echo "Enabling UFW"
             sudo ufw enable
-            log_command "sudo ufw enable"
             echo "Setting default deny incoming and default allow outgoing"
             sudo ufw default deny incoming
-            log_command "sudo ufw default deny incoming"
             sudo ufw default allow outgoing
+            echo "Enabling high ufw logging"
+            sudo ufw logging high
+            log_command "ufw logging high"
+            log_command "sudo ufw --force reset"
+            log_command "sudo ufw enable"
+            log_command "sudo ufw default deny incoming"
             log_command "sudo ufw default allow outgoing"
             sleep .3
             clear
@@ -762,6 +771,21 @@ deb_firewall_check() {
         elif [ "$ufw_set" = "2" ]; then
             clear
             echo "Manual mode"
+            echo "Restting UFW..."
+            sleep .1
+            sudo ufw --force reset
+            echo "Enabling UFW"
+            sleep .1
+            sudo ufw enable
+            echo "Setting default deny incoming and default allow outgoing"
+            sleep .1
+            sudo ufw default deny incoming
+            sudo ufw default allow outgoing
+            log_command "sudo ufw --force reset"
+            log_command "sudo ufw enable"
+            log_command "sudo ufw default deny incoming"
+            log_command "sudo ufw default allow outgoing"
+            clear
             echo "Please enter ports divided by spaces. 80 443..."
             read -r -a cust_ports
             clear
@@ -771,6 +795,9 @@ deb_firewall_check() {
                 log_command "sudo ufw allow $port"
             done
             sudo ufw enable
+            sudo ufw reload
+            log_command "sudo ufw reload"
+            log_command "sudo enable"
             clear
             open_menu
         else
@@ -791,7 +818,7 @@ deb_firewall_check() {
             echo "Restting UFW..."
             sudo ufw --force reset
             log_command "sudo ufw --force reset"
-            echo "Enableing UFW"
+            echo "Enabling UFW"
             sudo ufw enable
             log_command "sudo ufw enable"
             echo "Setting default deny incoming and default allow outgoing"
@@ -880,23 +907,35 @@ red_firewall_check() {
         Enter to skip"
         read -r redfwinstall
         if [ "$redfwinstall" = "1" ]; then
-            echo "Backing up firewall config ""/etc/firewalld/zones"" "
-            mkdir $backuppath/zonebackup/zonebackup-"$(date "+%H:%M")"
-            log_command "mkdir $backuppath/zonebackup/zonebackup-$(date "+%H:%M")"
-            cp /etc/firewalld/zones/* $backuppath/zonebackup/zonebackup-"$(date "+%H:%M")"
+            echo "Backing up firewall config ""/etc/firewalld"" "
+            mkdir $backuppath/firewalld/full-backup-"$(date "+%H:%M")"
+            cp -r /etc/firewalld/* $backuppath/zonebackup/zonebackup-"$(date "+%H:%M")"
+            log_command "mkdir $backuppath/firewalld/full-backup-$(date "+%H:%M")"
             log_command "cp /etc/firewalld/zones/* $backuppath/zonebackup/zonebackup-$(date "+%H:%M")"
-            sudo rm -rf /etc/firewalld/zones/*
+            sudo rm -rf /etc/firewalld/*
             sudo firewall-cmd --complete-reload
             sudo iptables -X
             sudo iptables -F
             sudo iptables -Z
             sudo systemctl restart firewalld
-            log_command "rm -rf /etc/firewalld/zones/*"
+            mkdir -p /etc/firewalld/zones
+            log_command "rm -rf /etc/firewalld/*"
+            log_command "mkdir /etc/firewalld/zones"
             log_command "sudo firewall-cmd --complete-reload"
             log_command "sudo iptables -X"
             log_command "sudo iptables -F"
             log_command "sudo iptables -Z"
             log_command "sudo systemctl restart firewalld"
+            cp firewall-configs/firewalld.conf /etc/firewalld/
+            sudo firewall-cmd --permanent --new-zone=public
+            log_command "sudo firewall-cmd --permanent --new-zone=public"
+            # cp firewall-configs/public.xml /etc/firewalld/zones/
+            sudo systemctl restart firewalld
+            log_command "cp firewall-configs/firewalld.conf /etc/firewalld/"
+            # log_command "cp firewall-configs/public.xml /etc/firewalld/zones/"
+            log_command "sudo systemctl restart firewalld"
+            sleep 2
+            clear
             echo "enter the number that you want to allow on the firewall"
             select port in "HTTP" "EMAIL" "DNS" "NTP"; do
                 case $port in
@@ -905,6 +944,8 @@ red_firewall_check() {
                         sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent
                         log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"
                     done
+                    sudo firewall-cmd --list-all --zone=public
+                    pause_script
                     open_menu
                     ;;
                 "EMAIL")
@@ -912,16 +953,22 @@ red_firewall_check() {
                         sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent
                         log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"
                     done
+                    sudo firewall-cmd --list-all --zone=public
+                    pause_script
                     open_menu
                     ;;
                 "DNS")
                     sudo firewall-cmd --zone=public --add-port=53/udp --permanent
                     log_command "sudo firewall-cmd --zone=public --add-port=53/udp --permanent"
+                    sudo firewall-cmd --list-all --zone=public
+                    pause_script
                     open_menu
                     ;;
                 "NTP")
                     sudo firewall-cmd --zone=public --add-port=123/udp --permanent
                     log_command "sudo firewall-cmd --zone=public --add-port=123/udp --permanent"
+                    sudo firewall-cmd --list-all --zone=public
+                    pause_script
                     open_menu
                     ;;
                 *) echo "Invalid selection" ;;

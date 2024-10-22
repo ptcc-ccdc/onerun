@@ -87,3 +87,6 @@ for i in ${SERVICE_TO_CHECK[@]}; do
         echo "${SERVICE_TO_CHECK} not found"
     fi
 done
+
+
+
