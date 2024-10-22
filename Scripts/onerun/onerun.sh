@@ -226,7 +226,12 @@ service_status() {
             if [[ $? -eq 0 ]]; then
                 echo -e "${YELLOW}$i${ENDCOLOR} is running"
             else
-                echo -e "${GREEN}$i${ENDCOLOR} is not running"
+                if [ $i == "ufw" ]; then
+                    echo -e "${RED}$i${ENDCOLOR}${YELLOW} is not running enable the firewall immediately${ENDCOLOR}"
+
+                else
+                    echo -e "${GREEN}$i${ENDCOLOR} is not running"
+                fi
             fi
         fi
     done
