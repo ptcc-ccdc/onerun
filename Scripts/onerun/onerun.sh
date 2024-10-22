@@ -1,9 +1,10 @@
 #!/bin/bash
 clear
-
+# add a cd to correct dir     cd onerun  pwd
 if [ -f ./onerun.env ]; then
     source onerun.env
 else echo "You need to run this script in the root dir (./onerun.sh)"
+
     exit 69
 fi
 # source requirements.sh
