@@ -293,7 +293,7 @@ open_menu() {
 }
 
 redhat_main_menu() {
-    echo "OS is:"${GREEN} "$os"${ENDCOLOR}
+    echo -e "OS is:"${GREEN} "$os"${ENDCOLOR}
     echo -e "${GREEN}Services discoverd:${ENDCOLOR} ${FOUND_IMPORTANT[@]}"
     select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Find services" "Services Status"; do
         case $ubuntu_option in
@@ -383,7 +383,7 @@ redhat_main_menu() {
 
 Debian_main_menu() {
     clear
-    echo "OS is:"${GREEN} "$os"${ENDCOLOR}
+    echo -e "OS is:"${GREEN} "$os"${ENDCOLOR}
     echo -e "${GREEN}Services discoverd:${ENDCOLOR} ${FOUND_IMPORTANT[@]}"
     select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "Log IP Monitor" "Find services" "Services Status"; do
         case $ubuntu_option in
