@@ -189,7 +189,7 @@ common_services_checker() {
     for i in ${installed_services[@]}; do
         if [[ "${IMPORTANT_SERVICES[@]}" =~ "$i" ]]; then
             if [[ "$i" == "ssh" || "$i" == "telnet" ]]; then
-                echo echo -e "${RED}$i${ENDCOLOR} is still installed remove this immediately."
+                echo  -e "${RED}$i${ENDCOLOR} is still installed remove this immediately."
                 FOUND_IMPORTANT+=($i)
             fi
             echo -e "${GREEN}$i${ENDCOLOR} was found this is an important service check it out"
