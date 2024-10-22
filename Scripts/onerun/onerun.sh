@@ -188,8 +188,11 @@ common_services_checker() {
 
     for i in ${installed_services[@]}; do
         if [[ "${IMPORTANT_SERVICES[@]}" =~ "$i" ]]; then
+            if [[ "$i" == "ssh" || "$i" == "telnet" ]]; then
+                echo echo -e "${RED}$i${ENDCOLOR} is still installed remove this immediately."
+                FOUND_IMPORTANT+=($i)
+
             echo -e "${GREEN}$i${ENDCOLOR} was found this is an important service check it out"
-            FOUND_IMPORTANT=()
             FOUND_IMPORTANT+=($i)
         # else
         #     echo "$i not found"
@@ -289,6 +292,7 @@ open_menu() {
 
 redhat_main_menu() {
     echo "OS is" "$os"
+    echo -e "${GREEN}Services discoverd:${ENDCOLOR} ${FOUND_IMPORTANT[@]}"
     select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Find services" "Services Status"; do
         case $ubuntu_option in
         "Remove ssh")
@@ -378,6 +382,7 @@ redhat_main_menu() {
 Debian_main_menu() {
     clear
     echo "OS is" "$os"
+    echo -e "${GREEN}Services discoverd:${ENDCOLOR} ${FOUND_IMPORTANT[@]}"
     select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "Log IP Monitor" "Find services" "Services Status"; do
         case $ubuntu_option in
         "Remove ssh") run_function_if_exists "deb_remove_ssh" ;;
