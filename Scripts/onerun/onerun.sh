@@ -189,11 +189,13 @@ common_services_checker() {
     for i in ${installed_services[@]}; do
         if [[ "${IMPORTANT_SERVICES[@]}" =~ "$i" ]]; then
             if [[ "$i" == "ssh" || "$i" == "telnet" ]]; then
-                echo  -e "${RED}$i${ENDCOLOR} is still installed remove this immediately."
+                echo -e "${RED}$i${ENDCOLOR} is still installed remove this immediately."
+                FOUND_IMPORTANT+=($i)
+            else
+
+                echo -e "${GREEN}$i${ENDCOLOR} was found this is an important service check it out"
                 FOUND_IMPORTANT+=($i)
             fi
-            echo -e "${GREEN}$i${ENDCOLOR} was found this is an important service check it out"
-            FOUND_IMPORTANT+=($i)
         # else
         #     echo "$i not found"
         fi
@@ -291,7 +293,7 @@ open_menu() {
 }
 
 redhat_main_menu() {
-    echo "OS is" "$os"
+    echo "OS is:"${GREEN} "$os"${ENDCOLOR}
     echo -e "${GREEN}Services discoverd:${ENDCOLOR} ${FOUND_IMPORTANT[@]}"
     select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Find services" "Services Status"; do
         case $ubuntu_option in
@@ -320,7 +322,7 @@ redhat_main_menu() {
         "Services Status")
             service_status
             open_menu
-            ;;             
+            ;;
         "Magicx") learning_the_hard_way ;;
         "users w/o passwords") users_no_pass ;;
             #  "CentOS 7" ) echo "CentOS 7"; break;;
@@ -381,7 +383,7 @@ redhat_main_menu() {
 
 Debian_main_menu() {
     clear
-    echo "OS is" "$os"
+    echo "OS is:"${GREEN} "$os"${ENDCOLOR}
     echo -e "${GREEN}Services discoverd:${ENDCOLOR} ${FOUND_IMPORTANT[@]}"
     select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "Log IP Monitor" "Find services" "Services Status"; do
         case $ubuntu_option in
@@ -422,7 +424,7 @@ Debian_main_menu() {
         "Services Status")
             service_status
             open_menu
-            ;;        
+            ;;
         "Magicx") run_function_if_exists "learning_the_hard_way" ;;
 
         "testing") run_function_if_exists "testingfunc" ;;
