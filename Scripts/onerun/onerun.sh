@@ -206,27 +206,25 @@ common_services_checker() {
 service_status() {
     installed_services=$(cat installed_services.txt)
     installed_services=(${installed_services})
-
-    for i in ${installed_services[@]}; do
-
-        if [ $servicectl == "systemctl" ]; then
-            $servicectl status $i | grep running >/dev/null 2>&1
-            if [ $? -eq 0 ]; then
-                echo -e "${YELLO}$i${ENDCOLOR} is running"
+    for i in "${installed_services[@]}"; do
+        if [[ $servicectl == "systemctl" ]]; then
+            $servicectl status "$i" | grep "running" >/dev/null 2>&1
+            if [[ $? -eq 0 ]]; then
+                echo -e "${YELLOW}$i${ENDCOLOR} is running"
             else
                 echo -e "${GREEN}$i${ENDCOLOR} is not running"
             fi
-        elif [ $servicectl == "service" ]; then
-            $servicectl $i status | grep running >/dev/null 2>&1
-            if [ $? -eq 0 ]; then
-                echo -e "${YELLO}$i${ENDCOLOR} is running"
+        elif [[ $servicectl == "service" ]]; then
+            $servicectl "$i" status | grep "running" >/dev/null 2>&1
+            if [[ $? -eq 0 ]]; then
+                echo -e "${YELLOW}$i${ENDCOLOR} is running"
             else
                 echo -e "${GREEN}$i${ENDCOLOR} is not running"
             fi
         fi
     done
-
 }
+
 
 man_os() {
     select os in "Debian" "Ubuntu" "Fedora" "Splunk" "CentOS 7"; do
