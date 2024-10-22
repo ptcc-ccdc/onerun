@@ -191,7 +191,7 @@ common_services_checker() {
             if [[ "$i" == "ssh" || "$i" == "telnet" ]]; then
                 echo echo -e "${RED}$i${ENDCOLOR} is still installed remove this immediately."
                 FOUND_IMPORTANT+=($i)
-
+            fi
             echo -e "${GREEN}$i${ENDCOLOR} was found this is an important service check it out"
             FOUND_IMPORTANT+=($i)
         # else
