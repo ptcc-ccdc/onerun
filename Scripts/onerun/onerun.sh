@@ -204,6 +204,7 @@ common_services_checker() {
 }
 
 service_status() {
+    servicectl_check
     installed_services=$(cat installed_services.txt)
     installed_services=(${installed_services})
     for i in "${installed_services[@]}"; do
