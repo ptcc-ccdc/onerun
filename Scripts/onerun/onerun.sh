@@ -1,9 +1,16 @@
 #!/bin/bash
 clear
+# add a cd to correct dir     cd onerun  pwd
+if [ -f ./onerun.env ]; then
+    source onerun.env
+else echo "You need to run this script in the root dir (./onerun.sh)"
 
-source ./onerun.env
+    exit 69
+fi
+# source requirements.sh
+# source banner.sh
 if [ $skip_banner -eq 0 ]; then
-    banner
+    ./banner.sh
 else
     echo "Skipping banner"
 fi
@@ -11,16 +18,18 @@ fi
 trap ctl-c SIGINT
 
 ctl-c() {
-    killall=$(ps -fC onerun.sh | awk 'NR==2 {print $2}')
+    clear
+    echo -e "${ENDCOLOR}" "Good luck, hopfully something worked"
+    echo -e "              0000_____________0000________0000000000000000__000000000000000000+\n            00000000_________00000000______000000000000000__0000000000000000000+\n           000____000_______000____000_____000_______0000__00______0+\n          000______000_____000______000_____________0000___00______0+\n         0000______0000___0000______0000___________0000_____0_____0+\n         0000______0000___0000______0000__________0000___________0+\n         0000______0000___0000______0000_________000___0000000000+\n         0000______0000___0000______0000________0000+\n          000______000_____000______000________0000+\n           000____000_______000____000_______00000+\n            00000000_________00000000_______0000000+\n              0000_____________0000________000000007;"
+    if [ $dry_run -eq 1 ]; then
+        rm -rf menu_choice.txt logs backups installed_potentially_malicious.txt installed_services.txt
+    fi
+    chattr +i $backuppath >/dev/null 2>&1
+    killall=$(pgrep 'tail|onerun.sh')
     for i in $killall; do
         echo killing $i
         kill -9 $i
     done
-    read -p wait
-    clear
-    echo -e "${ENDCOLOR}" "Good luck, hopfully something worked"
-    echo -e "              0000_____________0000________0000000000000000__000000000000000000+\n            00000000_________00000000______000000000000000__0000000000000000000+\n           000____000_______000____000_____000_______0000__00______0+\n          000______000_____000______000_____________0000___00______0+\n         0000______0000___0000______0000___________0000_____0_____0+\n         0000______0000___0000______0000__________0000___________0+\n         0000______0000___0000______0000_________000___0000000000+\n         0000______0000___0000______0000________0000+\n          000______000_____000______000________0000+\n           000____000_______000____000_______00000+\n            00000000_________00000000_______0000000+\n              0000_____________0000________000000007;"
-    rm -rf menu_choice.txt
     exit
 }
 
@@ -29,12 +38,14 @@ pause_script() {
     read -r -p "Press Enter to continue..."
     clear
 }
+echo -e "${GREEN}Logs will be stored in:${ENDCOLOR} $logpath"
+echo -e "${GREEN}Auto backups will be stored in:${ENDCOLOR} $backuppath"
 
 # User check
 if [ "$EUID" -ne 0 ]; then
     echo -e "${YELLOW}Current user is not root some fuctions will not work. Current user is: ${ENDCOLOR}"$USER
 else
-    echo "Running this script as '$USER'"
+    echo -e "${GREEN}Current user is${ENDCOLOR} ${RED}root${ENDCOLOR}"
 fi
 pause_script
 clear
@@ -44,6 +55,9 @@ log_command() {
     echo -e "At $(date) the user $USER ran: $1" >>"$logpath/ran_commands.txt"
 
 }
+
+mkdir -p $backuppath/backups $logpath/user-logs $logpath/ssh
+log_command "mkdir -p $onerun_root/backups $onerun_root/logs/user-logs"
 
 # Function checker
 run_function_if_exists() {
@@ -57,9 +71,6 @@ run_function_if_exists() {
 handle_error() {
     dialog --msgbox "$1" 10 40
 }
-
-mkdir -p ./backups ./logs/user-logs
-log_command "mkdir -p ./backups ./logs/user-logs"
 
 # if [ $date == "01/25/25" ]; then
 #     echo "Good Luck"
@@ -95,38 +106,142 @@ testingfunxc() {
     read -p -e "This is should match what you wanted to do"
 }
 
-# if [ $saftey -eq 0 ]; then
-#     echo -e "${BOLDRED}The safty variable is NOT set, hitting enter WILL auto run scripts${ENDCOLOR}"
-#     pause_script
-#     auto_run
-# else
-#     echo -e "${BOLDRED}The safty variable is set, not running backround scripts${ENDCOLOR}"
-# fi
+if [ $saftey -eq 0 ]; then
+    echo -e "${BOLDRED}The safty variable is NOT set, hitting enter WILL auto run scripts${ENDCOLOR}"
+    pause_script
+    auto_run
+else
+    echo -e "${BOLDRED}The safty variable is set, not running automagic scripts${ENDCOLOR}"
+fi
 
 auto_run() {
     saftey_check
-    echo -e "${GREEN}Logs will be stored in${ENDCOLOR} $logpath/"
     echo -e "${GREEN}Looking for ssh authorized_keys...${ENDCOLOR}"
     find / -type f -name "authorized_keys" 2>/dev/null >$logpath/ssh/found-ssh-keys-"$(date "+%H:%M")".txt
     keys_path=$(find / -type f -name "authorized_keys" 2>/dev/null)
     for path in $keys_path; do
         cp "$path" $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
-        log_command "mv $path $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
         echo -e "${RED}Key found:${ENDCOLOR} ${RED}$path${ENDCOLOR}"
         echo "$path:" >>$logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
-        log_command "echo $path: >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
         sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt >>$logpath/ssh/alterd_keys-"$(date "+%H:%M")".txt
-        log_command "sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
         rm -rf $logpath/ssh/unalterd_keys-"$(date "+%H:%M")".txt
-        log_command "rm -rf $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
         rm -rf "$path"
+        log_command "mv $path $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
+        log_command "echo $path: >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
+        log_command "sed -e 's/^.\{10\}//' $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt >> $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
+        log_command "rm -rf $logpath/ssh/unalterd_keys-$(date "+%H:%M").txt"
         log_command "rm -rf $path"
     done
     echo -e "${GREEN}If any keys have been found they have been logged to${ENDCOLOR} $logpath/ssh/found_keys-DATE.txt and removed.
     alterd unusable copies have been made in $logpath/ssh/alterd_keys-$(date "+%H:%M").txt"
     pause_script
-    rand_users_password
-    clear
+    rm -rf installed_potentially_malicious.txt installed_services.txt
+    if [ -e "./installed_services.txt" ]; then
+        rand_users_password
+        clear
+    fi
+    servicectl_check
+}
+
+servicectl_check() {
+    if command -v systemctl &>/dev/null; then
+        # echo "System has systemctl"
+        servicectl="systemctl"
+    elif command -v service &>/dev/null; then
+        # echo "System has service"
+        servicectl="service"
+    else
+        echo "Service control method not found, defaulting to service"
+        servicectl="service"
+    fi
+
+    if [ -d /etc/init.d ]; then
+        echo -e "${YELLOW}Path /etc/init.d exists, take a look to see what there is${ENDCOLOR}"
+    fi
+}
+
+potentially_malicious_services() {
+    for i in ${potentially_malicious[@]}; do
+        sleep .2
+        command -v $i >/dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            echo "$i is installed"
+            echo "$i" >>installed_potentially_malicious.txt
+        else
+            echo "$i is not installed"
+        fi
+    done
+    echo -e "${GREEN}End of malicious services${ENDCOLOR}"
+    pause_script
+}
+
+common_services_checker() {
+
+    for i in ${service_detection[@]}; do
+        sleep .2
+        command -v $i >/dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            echo "$i is installed"
+            echo "$i" >>installed_services.txt
+
+        else
+            echo "$i is not installed"
+        fi
+    done
+
+    installed_services=$(cat installed_services.txt)
+    installed_services=(${installed_services})
+
+    for i in ${installed_services[@]}; do
+        if [[ "${IMPORTANT_SERVICES[@]}" =~ "$i" ]]; then
+            if [[ "$i" == "ssh" || "$i" == "telnet" ]]; then
+                echo -e "${RED}$i${ENDCOLOR} is still installed remove this immediately."
+                FOUND_IMPORTANT+=($i)
+            else
+
+                echo -e "${GREEN}$i${ENDCOLOR} was found this is an important service check it out"
+                FOUND_IMPORTANT+=($i)
+            fi
+        # else
+        #     echo "$i not found"
+        fi
+    done
+    pause_script
+}
+
+service_status() {
+    servicectl_check
+    installed_services=$(cat installed_services.txt)
+    installed_services=(${installed_services})
+    for i in "${installed_services[@]}"; do
+        sleep .3
+        if [[ $servicectl == "systemctl" ]]; then
+            $servicectl status "$i" | grep "running" >/dev/null 2>&1
+            if [[ $? -eq 0 ]]; then
+                echo -e "${YELLOW}$i${ENDCOLOR} is running"
+            else
+                if [ $i == "ufw" ]; then
+                    echo -e "${RED}$i${ENDCOLOR}${YELLOW} is not running enable the firewall immediately${ENDCOLOR}"
+
+                else
+                    echo -e "${GREEN}$i${ENDCOLOR} is not running"
+                fi
+            fi
+        elif [[ $servicectl == "service" ]]; then
+            $servicectl "$i" status | grep "running" >/dev/null 2>&1
+            if [[ $? -eq 0 ]]; then
+                echo -e "${YELLOW}$i${ENDCOLOR} is running"
+            else
+                if [ $i == "ufw" ]; then
+                    echo -e "${RED}$i${ENDCOLOR}${YELLOW} is not running enable the firewall immediately${ENDCOLOR}"
+
+                else
+                    echo -e "${GREEN}$i${ENDCOLOR} is not running"
+                fi
+            fi
+        fi
+    done
+    pause_script
 }
 
 man_os() {
@@ -194,8 +309,9 @@ open_menu() {
 }
 
 redhat_main_menu() {
-    echo "OS is" "$os"
-    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords"; do
+    echo -e "OS is:"${GREEN} "$os"${ENDCOLOR}
+    echo -e "${GREEN}Services discoverd:${ENDCOLOR} ${FOUND_IMPORTANT[@]}"
+    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Find services" "Services Status"; do
         case $ubuntu_option in
         "Remove ssh")
             red_remove_ssh
@@ -213,9 +329,15 @@ redhat_main_menu() {
             red_firewall_check
             open_menu
             ;;
-        "Enter services")
-            echo "Should auto find service but have option to add man"
-            break
+        "Find services")
+            potentially_malicious_services
+            common_services_checker
+            # echo "Should auto find service but have option to add man"
+            open_menu
+            ;;
+        "Services Status")
+            service_status
+            open_menu
             ;;
         "Magicx") learning_the_hard_way ;;
         "users w/o passwords") users_no_pass ;;
@@ -229,95 +351,110 @@ redhat_main_menu() {
         esac
     done
 }
-
-Debian_main_menu() {
-    while true; do
-        # Dialog menu
-        dialog --clear --title "Debian Main Menu" --menu "Select an option:" 15 50 9 \
-            1 "Remove ssh" \
-            2 "Change ALL users passwords" \
-            3 "Randomize all account passwords" \
-            4 "Check users that can login" \
-            5 "users w/o passwords" \
-            6 "Check Firewall" \
-            7 "Remove users .ssh" \
-            8 "Backup dirs" \
-            9 "Magicx" \
-            10 "Log IP Monitor" \
-            0 "Exit" 2>menu_choice.txt
-
-        # Read the user's choice
-        CHOICE=$(<menu_choice.txt)
-        clear
-
-        case $CHOICE in
-        1) run_function_if_exists "deb_remove_ssh" ;;
-        2) run_function_if_exists "change_all_pass" ;;
-        3) run_function_if_exists "rand_users_password" ;;
-        4)
-            cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin | cut -f1 -d":" >$logpath/user-logs/users-$(date "+%H:%M").txt
-            cat $logpath/user-logs/users-$(date "+%H:%M").txt
-            read -p "These users can most likely login. Check them out"
-            open_menu
-            ;;
-        5) run_function_if_exists "users_no_pass" ;;
-        6) run_function_if_exists "deb_firewall_check" ;;
-        7) run_function_if_exists "remove_.ssh" ;;
-        8) run_function_if_exists "backup" ;;
-        9) run_function_if_exists "learning_the_hard_way" ;;
-        10) run_function_if_exists "ip_mon" ;;
-        0)
-            rm -rf menu_choice.txt
-            exit
-            ;;
-        *) handle_error "Invalid selection" ;;
-        esac
-    done
-}
-
+## If the systems have dialog you can uncommnet this for a nicer menu on deb no added functionality
 # Debian_main_menu() {
-#     clear
-#     echo "OS is" "$os"
-#     select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "testing"; do
-#         case $ubuntu_option in
-#         "Remove ssh") run_function_if_exists "deb_remove_ssh" ;;
-#         "Change ALL users passwords")
-#             run_function_if_exists "change_all_pass"
-#             open_menu
-#             ;;
-#         "Check users that can login")
-#             cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin | cut -f1 -d":"
-#             pause_script
-#             open_menu
-#             ;; # cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin | cut -f1 -d":" # awk -F: ' {print $1, $7}' /etc/passwd # notes.sh
-#         "Check Firewall") run_function_if_exists "deb_firewall_check" ;;
-#         "Enter services")
-#             echo "Should auto find service but have option to add man"
-#             break
-#             ;;
-#         "users w/o passwords") run_function_if_exists "users_no_pass" ;;
-#         "Remove .ssh")
-#             run_function_if_exists "remove_.ssh"
-#             open_menu
-#             ;;
-#         "Backup dirs")
-#             run_function_if_exists "backup"
-#             open_menu
-#             ;;
-#         "Magicx") run_function_if_exists "learning_the_hard_way" ;;
+#     while true; do
+#         # Dialog menu
+#         dialog --clear --title "Debian Main Menu" --menu "Select an option:" 15 50 9 \
+#             1 "Remove ssh" \
+#             2 "Change ALL users passwords" \
+#             3 "Randomize all account passwords" \
+#             4 "Check users that can login" \
+#             5 "users w/o passwords" \
+#             6 "Check Firewall" \
+#             7 "Remove users .ssh" \
+#             8 "Backup dirs" \
+#             9 "Magicx" \
+#             10 "Log IP Monitor" \
+#             0 "Exit" 2>menu_choice.txt
 
-#         "testing") run_function_if_exists "testingfunc" ;;
+#         # Read the user's choice
+#         CHOICE=$(<menu_choice.txt)
+#         clear
 
-#         *)
-#             echo "Invalid selection"
-#             sleep .7
-#             clear
-#             Debian_main_menu
+#         case $CHOICE in
+#         1) run_function_if_exists "deb_remove_ssh" ;;
+#         2) run_function_if_exists "change_all_pass" ;;
+#         3) run_function_if_exists "rand_users_password" ;;
+#         4)
+#             cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin | cut -f1 -d":" >$logpath/user-logs/users-$(date "+%H:%M").txt
+#             cat $logpath/user-logs/users-$(date "+%H:%M").txt
+#             read -p "These users can most likely login. Check them out"
+#             open_menu
 #             ;;
+#         5) run_function_if_exists "users_no_pass" ;;
+#         6) run_function_if_exists "deb_firewall_check" ;;
+#         7) run_function_if_exists "remove_.ssh" ;;
+#         8) run_function_if_exists "backup" ;;
+#         9) run_function_if_exists "learning_the_hard_way" ;;
+#         10) run_function_if_exists "ip_mon" ;;
+#         0)
+#             rm -rf menu_choice.txt
+#             ctl-c
+#             ;;
+#         *) handle_error "Invalid selection" ;;
 #         esac
 #     done
-
 # }
+
+Debian_main_menu() {
+    clear
+    echo -e "OS is:"${GREEN} "$os"${ENDCOLOR}
+    echo -e "${GREEN}Services discoverd:${ENDCOLOR} ${FOUND_IMPORTANT[@]}"
+    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "Log IP Monitor" "Find services" "Services Status"; do
+        case $ubuntu_option in
+        "Remove ssh") run_function_if_exists "deb_remove_ssh" ;;
+        "Change ALL users passwords")
+            run_function_if_exists "change_all_pass"
+            open_menu
+            ;;
+        "Check users that can login")
+            cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin | cut -f1 -d":"
+            pause_script
+            open_menu
+            ;; # cat /etc/passwd | grep -v -e /bin/false -e /usr/sbin/nologin | cut -f1 -d":" # awk -F: ' {print $1, $7}' /etc/passwd # notes.sh
+        "Check Firewall") run_function_if_exists "deb_firewall_check" ;;
+        "Enter services")
+            echo "Should auto find service but have option to add man"
+            break
+            ;;
+        "users w/o passwords") run_function_if_exists "users_no_pass" ;;
+        "Remove .ssh")
+            run_function_if_exists "remove_.ssh"
+            open_menu
+            ;;
+        "Backup dirs")
+            run_function_if_exists "backup"
+            open_menu
+            ;;
+        "Log IP Monitor")
+            run_function_if_exists "ip_mon"
+            open_menu
+            ;;
+        "Find services")
+            potentially_malicious_services
+            common_services_checker
+            # echo "Should auto find service but have option to add man"
+            open_menu
+            ;;
+        "Services Status")
+            service_status
+            open_menu
+            ;;
+        "Magicx") run_function_if_exists "learning_the_hard_way" ;;
+
+        "testing") run_function_if_exists "testingfunc" ;;
+
+        *)
+            echo "Invalid selection"
+            sleep .7
+            clear
+            Debian_main_menu
+            ;;
+        esac
+    done
+
+}
 
 remove_.ssh() {
     saftey_check
@@ -432,6 +569,7 @@ users_no_pass() {
 }
 
 change_all_pass() {
+    saftey_check
     clear
     echo "This will prompt you to change ALL users passwords.
     enter 1 to continue or enter to go back to main menu"
@@ -454,6 +592,7 @@ rand_users_password() {
     saftey_check
     clear
     echo -e "${RED}This will change ALL users passwords make sure you change any account password before you log out.${ENDCOLOR}"
+    echo -e "${RED}Should proably make sure this accounts aren't tied to a email account"
     echo -e "${YELLOW}Press enter to go back or 1 to start${ENDCOLOR}"
     read -r ask_rand
     clear
@@ -471,9 +610,13 @@ rand_users_password() {
                 echo -e "${GREEN}Changed $user's password${ENDCOLOR}"
             fi
         done
+        echo -e "${GREEN}Change your current password${ENDCOLOR}"
+        passwd
         pause_script
         open_menu
     else
+        echo -e "${YELLOW}NOT changing any passwords${ENDCOLOR}"
+        slee .3
         clear
         open_menu
     fi
@@ -481,66 +624,70 @@ rand_users_password() {
 
 setup_newtty() {
     clear
+    sec=10
     echo -e "${YELLOW}This will walk you through setting up another TTY for the funtion ${FUNCNAME[1]}.${ENDCOLOR}"
     echo -e "${YELLOW}After you enter the TTY number you want it will bring you to that TTY ${BOLDRED}you will have to login.${ENDCOLOR}"
     echo -e "${YELLOW}If you cant switch back to your orginal TTY the script will attempt to bring you back after a timeout but you many have to use ctl+alt+fn#${ENDCOLOR}"
-    cur_tty=$(tty | grep -o [0-9])
-    echo -e "Current TTY value" $cur_tty
-    read -p "Enter the just the TTY number you want not /dev..: " TTYnum
-    read -p "Enter the timeout in seconds before you are brought back to this tty: " sec
+    cur_tty_num=$(tty | grep -o [0-9])
+    cur_tty=$(tty | grep -oE 'pts|tty')
+    if [ "$cur_tty" == "tty" ]; then
+        echo "TTY is tty"
+        base_tty="/dev/tty"
+    elif [ "$cur_tty" == "pts" ]; then
+        echo "TTY is pts"
+        base_tty="/dev/pts/"
+    else
+        echo "Could not determine TTY"
+        read -p "Idk"
+    fi
+    read -p "Enter the just the TTY number you want not /dev..$base_tty" TTYnum
+    read -p "Enter the timeout in seconds ($sec) before you are brought back to this tty ($base_tty$cur_tty_num): " sec
     chvt $TTYnum
-    sleep $sec
-    chvt $cur_tty
+    sleep "$sec"
+    chvt $cur_tty_num
+
 }
 
 ip_mon() {
-    read -p "Enter base IP address: " base_range
+    echo -e "This will guide you through setting up a logger for red team IPs."
+    echo -e "Enter the IP range of the red team"
+    read -p "Enter base IP address don't put the second dot (192.168): " base_range
     base_range_formated=$(echo $base_range | sed 's/\./ /g')
     echo "Formatted base IP address: $base_range_formated"
-    read -p "Enter last IP in range: " max_range
-    max_range_formated=$(echo $max_range | sed 's/\./ /g')
-    echo "Formatted last IP address: $max_range_formated"
+    range='([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
     base_range_formated=(${base_range_formated})
-    max_range_formated=(${max_range_formated})
-    for i in {0..1}; do
-        command[$i]="(${base_range_formated[$i]}\.)"
-    done
-    # Loving the third octect
-    if [ ${base_range_formated[2]} != ${max_range_formated[2]} ]; then
-
-        # see if the 3rd octect is higher the 10
-        if [ ${max_range_formated[2]} -gt 10 ]; then
-            len=${#max_range_formated[2]}
-            # split up the 3rd octect
-            3rd_base_split=$(echo "${base_range_formated[2]}" | fold -w1)
-            3rd_base_set=$(${max_range_formated[2]} - 1) # To use in for loop
-            # 3rd_max_split=$(echo ${max_range_formated[2]} | fold -w1)
-        
-            for i in {$3rd_base_set..${max_range_formated[2]}}; do
-                3rd_octect+="($i[0-9]|"
-                done
-
-            # '(3[0-9]|4[0-9]|5[0-9]|60)\.'
-
-            # grep -E '192\.168\.(3[0-9]|4[0-9]|5[0-9]|60)\.(0|[1-9][0-9]{0,2}|[1-9][0-9]?|[0-9]{1,2}|[0-9]{1,3})' filename.log
-
-            # command[2]="([${base_range_formated[2]}-9]{1,"$len"}\.)"
-        elif [ ${max_range_formated[2]} == 10 ]; then
-            command[2]="([${base_range_formated[2]}-9]{0,2}\.)"
-        else
-            command[2]="([${base_range_formated[2]}-${max_range_formated[2]}]\.)"
-        fi
-    fi
-    last_octet_regex='([0-9]{0,3})'
-
-    full_pattern="${command[0]}${command[1]}${3rd_command[@]}$last_octet_regex"
+    full_pattern="${base_range_formated[0]}\.${base_range_formated[1]}\.${range}\.${range}"
     echo -e "Full regex pattern: '$full_pattern'"
-    tail -f /var/log/*.log | grep -E --line-buffered "$full_pattern" | while read -r line; do
-        wall "Red Team IP Found: $line"
-        echo "$line" >>./logs/ip_detections.log
-    done >/dev/pts/2
-    read -p "The log mon should be running on /dev/tty$TTYNUM if not idk good luck"
+    read -p "Do you want atempt to log in another tty while keeping this one free untill quit? y/N: " new_tty
+    if [ $new_tty == "y" ]; then
+        setup_newtty
+    else
+        echo "Not setting up new TTY"
+    fi
+    {
+        tail -n0 -f /var/log/*.log | grep -E --line-buffered "$full_pattern" | while read -r line; do
+            wall "Red Team IP Found: $line $0"
+            # echo "$line" >> ./logs/ip_detections.log
+        done
+    } >"$base_tty$TTYnum" 2>&1 & # Run in the background "$base_tty$TTYnum"
+
+    echo "Logging started in TTY $base_tty$TTYnum"
 }
+
+# echo -e  "This will guide you through setting up a logger for red team IPs."
+# echo -e "Enter the ip range of the red team"
+# read -p "Enter base IP address: " base_range
+# base_range_formated=$(echo $base_range | sed 's/\./ /g')
+# echo "Formatted base IP address: $base_range_formated"
+# range='([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
+# base_range_formated=(${base_range_formated})
+# full_pattern="${base_range_formated[0]}.${base_range_formated[1]}\.${range}\.${range}"
+# echo -e "Full regex pattern: '$full_pattern'"
+# tail -f /var/log/*.log | grep -E --line-buffered "$full_pattern" | while read -r line; do
+#     wall "Red Team IP Found: $line"
+#     echo "$line" >>./logs/ip_detections.log
+# done #>/dev/pts/0
+# read -p "The log mon should be running on /dev/tty$TTYNUM if not idk good luck"
 
 ufw_setter() {
     saftey_check
@@ -555,7 +702,7 @@ ufw_setter() {
     log_command "sudo ufw logging high"
     sudo ufw status verbose
     echo -e "${YELLOW}You can see logs in${ENDCOLOR} ${RED}/var/logs/ufw.log${ENDCOLOR}"
-    echo -e "Do you want to spawn a log monitor on another TTY? Y/N: "
+    echo -e "Do you want to spawn a IP monitor? y/N: "
     read ip_mon
     if [ "$ip_mon" == "Y" ]; then
         ip_mon
@@ -570,19 +717,22 @@ deb_firewall_check() {
         echo "UFW installed would you like to reset and open set ports or custom ports?
     1. set ports
     2. custom ports
-    Enter to skip"
+    Enter to do nothing"
         read -r ufw_set
         if [ "$ufw_set" = 1 ]; then
             echo "Restting UFW..."
             sudo ufw --force reset
-            log_command "sudo ufw --force reset"
-            echo "Enableing UFW"
+            echo "Enabling UFW"
             sudo ufw enable
-            log_command "sudo ufw enable"
             echo "Setting default deny incoming and default allow outgoing"
             sudo ufw default deny incoming
-            log_command "sudo ufw default deny incoming"
             sudo ufw default allow outgoing
+            echo "Enabling high ufw logging"
+            sudo ufw logging high
+            log_command "ufw logging high"
+            log_command "sudo ufw --force reset"
+            log_command "sudo ufw enable"
+            log_command "sudo ufw default deny incoming"
             log_command "sudo ufw default allow outgoing"
             sleep .3
             clear
@@ -622,6 +772,21 @@ deb_firewall_check() {
         elif [ "$ufw_set" = "2" ]; then
             clear
             echo "Manual mode"
+            echo "Restting UFW..."
+            sleep .1
+            sudo ufw --force reset
+            echo "Enabling UFW"
+            sleep .1
+            sudo ufw enable
+            echo "Setting default deny incoming and default allow outgoing"
+            sleep .1
+            sudo ufw default deny incoming
+            sudo ufw default allow outgoing
+            log_command "sudo ufw --force reset"
+            log_command "sudo ufw enable"
+            log_command "sudo ufw default deny incoming"
+            log_command "sudo ufw default allow outgoing"
+            clear
             echo "Please enter ports divided by spaces. 80 443..."
             read -r -a cust_ports
             clear
@@ -631,6 +796,9 @@ deb_firewall_check() {
                 log_command "sudo ufw allow $port"
             done
             sudo ufw enable
+            sudo ufw reload
+            log_command "sudo ufw reload"
+            log_command "sudo enable"
             clear
             open_menu
         else
@@ -651,7 +819,7 @@ deb_firewall_check() {
             echo "Restting UFW..."
             sudo ufw --force reset
             log_command "sudo ufw --force reset"
-            echo "Enableing UFW"
+            echo "Enabling UFW"
             sudo ufw enable
             log_command "sudo ufw enable"
             echo "Setting default deny incoming and default allow outgoing"
@@ -740,23 +908,35 @@ red_firewall_check() {
         Enter to skip"
         read -r redfwinstall
         if [ "$redfwinstall" = "1" ]; then
-            echo "Backing up firewall config ""/etc/firewalld/zones"" "
-            mkdir $backuppath/zonebackup/zonebackup-"$(date "+%H:%M")"
-            log_command "mkdir $backuppath/zonebackup/zonebackup-$(date "+%H:%M")"
-            cp /etc/firewalld/zones/* $backuppath/zonebackup/zonebackup-"$(date "+%H:%M")"
+            echo "Backing up firewall config ""/etc/firewalld"" "
+            mkdir $backuppath/firewalld/full-backup-"$(date "+%H:%M")"
+            cp -r /etc/firewalld/* $backuppath/zonebackup/zonebackup-"$(date "+%H:%M")"
+            log_command "mkdir $backuppath/firewalld/full-backup-$(date "+%H:%M")"
             log_command "cp /etc/firewalld/zones/* $backuppath/zonebackup/zonebackup-$(date "+%H:%M")"
-            sudo rm -rf /etc/firewalld/zones/*
+            sudo rm -rf /etc/firewalld/*
             sudo firewall-cmd --complete-reload
             sudo iptables -X
             sudo iptables -F
             sudo iptables -Z
             sudo systemctl restart firewalld
-            log_command "rm -rf /etc/firewalld/zones/*"
+            mkdir -p /etc/firewalld/zones
+            log_command "rm -rf /etc/firewalld/*"
+            log_command "mkdir /etc/firewalld/zones"
             log_command "sudo firewall-cmd --complete-reload"
             log_command "sudo iptables -X"
             log_command "sudo iptables -F"
             log_command "sudo iptables -Z"
             log_command "sudo systemctl restart firewalld"
+            cp firewall-configs/firewalld.conf /etc/firewalld/
+            sudo firewall-cmd --permanent --new-zone=public
+            log_command "sudo firewall-cmd --permanent --new-zone=public"
+            # cp firewall-configs/public.xml /etc/firewalld/zones/
+            sudo systemctl restart firewalld
+            log_command "cp firewall-configs/firewalld.conf /etc/firewalld/"
+            # log_command "cp firewall-configs/public.xml /etc/firewalld/zones/"
+            log_command "sudo systemctl restart firewalld"
+            sleep 2
+            clear
             echo "enter the number that you want to allow on the firewall"
             select port in "HTTP" "EMAIL" "DNS" "NTP"; do
                 case $port in
@@ -765,6 +945,8 @@ red_firewall_check() {
                         sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent
                         log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"
                     done
+                    sudo firewall-cmd --list-all --zone=public
+                    pause_script
                     open_menu
                     ;;
                 "EMAIL")
@@ -772,16 +954,22 @@ red_firewall_check() {
                         sudo firewall-cmd --zone=public --add-port="$port"/tcp --permanent
                         log_command "sudo firewall-cmd --zone=public --add-port=$port/tcp --permanent"
                     done
+                    sudo firewall-cmd --list-all --zone=public
+                    pause_script
                     open_menu
                     ;;
                 "DNS")
                     sudo firewall-cmd --zone=public --add-port=53/udp --permanent
                     log_command "sudo firewall-cmd --zone=public --add-port=53/udp --permanent"
+                    sudo firewall-cmd --list-all --zone=public
+                    pause_script
                     open_menu
                     ;;
                 "NTP")
                     sudo firewall-cmd --zone=public --add-port=123/udp --permanent
                     log_command "sudo firewall-cmd --zone=public --add-port=123/udp --permanent"
+                    sudo firewall-cmd --list-all --zone=public
+                    pause_script
                     open_menu
                     ;;
                 *) echo "Invalid selection" ;;
