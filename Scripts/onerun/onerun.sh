@@ -88,6 +88,48 @@ saftey_check() {
     fi
 }
 
+mysql_user_check() {
+    mysql -u root -p -e "SELECT User, Host, authentication_string FROM mysql.user;"
+    pause_script
+}
+
+find_setuid() {
+    clear
+    setuid=$(find / -perm -u=s -type f 2>/dev/null)
+    for i in $setuid; do ls -la "$i"; done
+}
+
+motd() {
+echo > /etc/motd
+echo > /etc/issue
+echo "UNAUTHORIZED ACCESS TO THIS DEVICE IS PROHIBITED" | sudo tee -a /etc/motd /etc/issue
+echo "You must have explicit, authorized permission to access or configure this device. Unauthorized attempts and actions to access or use this system may result in civil and/or criminal penalties. All activities performed on this device are logged and monitored." | sudo tee -a /etc/motd /etc/issue
+
+}
+
+cron_check() {
+    for user in $users
+    do
+        echo "User: $user"
+        crontab -l -u $user
+        read -p "Press enter to continue"
+    done
+    clear
+    echo "No more users make sure you took screen shots if any crontabs were found!"
+    pause_script
+}
+
+remove_cron() {
+    for user in $users
+    do 
+    echo "Removing $user's cron"
+    crontab -r -u $user
+    done
+    clear
+    echo "No more users"
+    pause_script    
+}
+
 testingfunxc() {
     saftey_check
     echo "0:" ${FUNCNAME[0]} "1:" ${FUNCNAME[1]} "2" ${FUNCNAME[2]}
@@ -104,6 +146,12 @@ fi
 
 auto_run() {
     saftey_check
+    motd
+    # Uncommenting below will break other users from having proper perms. Might slow down red team 
+    # chmod 600 /etc/shadow
+    # chmod 600 /etc/passwd
+    # chown root:root /etc/shadow
+    # chown root:root /etc/passwd
     echo -e "${GREEN}Looking for ssh authorized_keys...${ENDCOLOR}"
     find / -type f -name "authorized_keys" 2>/dev/null >$logpath/ssh/found-ssh-keys-"$(date "+%H:%M")".txt
     keys_path=$(find / -type f -name "authorized_keys" 2>/dev/null)
