@@ -1,21 +1,21 @@
 #!/bin/bash
-clear
-# add a cd to correct dir     cd onerun  pwd
-if [ -f ./onerun.env ]; then
-    source onerun.env
-else echo "You need to run this script in the root dir (./onerun.sh)"
 
-    exit 69
-fi
-# source requirements.sh
-# source banner.sh
-if [ $skip_banner -eq 0 ]; then
-    ./banner.sh
-else
-    echo "Skipping banner"
-fi
 
 trap ctl-c SIGINT
+
+# Function checker
+run_function_if_exists() {
+    if declare -F "$1" >/dev/null 2>&1; then
+        $1
+        open_menu
+    else
+        handle_error "Function '$1' does not exist!"
+    fi
+}
+handle_error() {
+    dialog --msgbox "$1" 10 40
+}
+
 
 ctl-c() {
     clear
@@ -32,33 +32,6 @@ ctl-c() {
     done
     exit
 }
-
-#why not
-pause_script() {
-    read -r -p "Press Enter to continue..."
-    clear
-}
-echo -e "${GREEN}Logs will be stored in:${ENDCOLOR} $logpath"
-echo -e "${GREEN}Auto backups will be stored in:${ENDCOLOR} $backuppath"
-
-# User check
-if [ "$EUID" -ne 0 ]; then
-    echo -e "${YELLOW}Current user is not root some fuctions will not work. Current user is: ${ENDCOLOR}"$USER
-else
-    echo -e "${GREEN}Current user is${ENDCOLOR} ${RED}root${ENDCOLOR}"
-fi
-pause_script
-clear
-
-# command logger
-log_command() {
-    echo -e "At $(date) the user $USER ran: $1" >>"$logpath/ran_commands.txt"
-
-}
-
-mkdir -p $backuppath/backups $logpath/user-logs $logpath/ssh
-log_command "mkdir -p $onerun_root/backups $onerun_root/logs/user-logs"
-
 # Function checker
 run_function_if_exists() {
     if declare -F "$1" >/dev/null 2>&1; then
@@ -71,6 +44,21 @@ run_function_if_exists() {
 handle_error() {
     dialog --msgbox "$1" 10 40
 }
+#why not
+pause_script() {
+    read -r -p "Press Enter to continue..."
+    clear
+}
+
+
+# command logger
+log_command() {
+    echo -e "At $(date) the user $USER ran: $1" >>"$logpath/ran_commands.txt"
+
+}
+
+mkdir -p $backuppath/backups $logpath/user-logs $logpath/ssh
+log_command "mkdir -p $onerun_root/backups $onerun_root/logs/user-logs"
 
 # if [ $date == "01/25/25" ]; then
 #     echo "Good Luck"
@@ -1089,6 +1077,68 @@ backup() {
     done
 }
 # Start
+
+
+clear
+
+usage() {
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  -h, --help       Show this help message"
+    echo "  -f, --function   Specify a function to run"
+    echo "  -l, --list   List all functions"
+    echo ""
+    echo "Examples:"
+    echo "  $0 -f function_name  Run function_name  from the script"
+}
+
+if [[ $1 == "-h" || $1 == "--help" ]]; then
+    usage
+    exit
+elif [[ $1 == "-f" || $1 == "--function" ]]; then
+    if [[ -n $2 ]]; then 
+        source onerun.env
+        run_function_if_exists "$2"
+    else
+        usage
+        echo "Error: -f, --function requires a function name."
+        exit 69
+    fi
+elif [[ $1 == "-l" || $1 == "--list" ]]; then
+    echo "Defined functions:"
+    declare -F |  cut -d' ' -f3
+    exit
+fi
+
+# add a cd to correct dir     cd onerun  pwd
+if [ -f ./onerun.env ]; then
+    source onerun.env
+else
+    echo "You need to run this script in the root dir (./onerun.sh)"
+
+    exit 69
+fi
+# source requirements.sh
+# source banner.sh
+if [ $skip_banner -eq 0 ]; then
+    ./banner.sh
+else
+    echo "Skipping banner"
+fi
+
+
+
+echo -e "${GREEN}Logs will be stored in:${ENDCOLOR} $logpath"
+echo -e "${GREEN}Auto backups will be stored in:${ENDCOLOR} $backuppath"
+# User check
+if [ "$EUID" -ne 0 ]; then
+    echo -e "${YELLOW}Current user is not root some fuctions will not work. Current user is: ${ENDCOLOR}"$USER
+else
+    echo -e "${GREEN}Current user is${ENDCOLOR} ${RED}root${ENDCOLOR}"
+fi
+pause_script
+clear
 auto_os
 echo -e "${BLUE}OS detected:${ENDCOLOR}${RED} $os${ENDCOLOR}
 ${BLUE}Enter 1 to switch OS's or enter to continue${ENDCOLOR}"
@@ -1100,3 +1150,5 @@ if [ "$ask_man" = "1" ]; then
 fi
 clear
 open_menu
+
+
