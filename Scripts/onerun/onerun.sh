@@ -1211,10 +1211,10 @@ if [ "$ask_man" = "1" ]; then
 fi
 clear
 if [ $saftey -eq 0 ]; then
-    echo -e "${BOLDRED}The safty variable is NOT set, hitting enter WILL auto run scripts${ENDCOLOR}"
-    pause_script
+    # echo -e "${BOLDRED}The safty variable is NOT set, hitting enter WILL auto run scripts${ENDCOLOR}"
+    # pause_script
     auto_run
 else
-    echo -e "${BOLDRED}The safty variable is set, not running automagic scripts${ENDCOLOR}"
+    echo -e "${BOLDRED}The safty variable is set, not running automagic startup scripts${ENDCOLOR}"
 fi
 open_menu
