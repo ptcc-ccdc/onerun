@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 trap ctl-c SIGINT
 
 # Function checker
@@ -15,7 +14,6 @@ run_function_if_exists() {
 handle_error() {
     dialog --msgbox "$1" 10 40
 }
-
 
 ctl-c() {
     clear
@@ -49,7 +47,6 @@ pause_script() {
     read -r -p "Press Enter to continue..."
     clear
 }
-
 
 # command logger
 log_command() {
@@ -88,6 +85,46 @@ saftey_check() {
     fi
 }
 
+mysql_user_check() {
+    mysql -u root -p -e "SELECT User, Host, authentication_string FROM mysql.user;"
+    pause_script
+}
+
+find_setuid() {
+    clear
+    setuid=$(find / -perm -u=s -type f 2>/dev/null)
+    for i in $setuid; do ls -la "$i"; done
+}
+
+motd() {
+    echo >/etc/motd
+    echo >/etc/issue
+    echo "UNAUTHORIZED ACCESS TO THIS DEVICE IS PROHIBITED" | sudo tee -a /etc/motd /etc/issue
+    echo "You must have explicit, authorized permission to access or configure this device. Unauthorized attempts and actions to access or use this system may result in civil and/or criminal penalties. All activities performed on this device are logged and monitored." | sudo tee -a /etc/motd /etc/issue
+
+}
+
+cron_check() {
+    for user in $users; do
+        echo "User: $user"
+        crontab -l -u $user
+        read -p "Press enter to continue"
+    done
+    clear
+    echo "No more users make sure you took screen shots if any crontabs were found!"
+    pause_script
+}
+
+remove_cron() {
+    for user in $users; do
+        echo "Removing $user's cron"
+        crontab -r -u $user
+    done
+    clear
+    echo "No more users"
+    pause_script
+}
+
 testingfunxc() {
     saftey_check
     echo "0:" ${FUNCNAME[0]} "1:" ${FUNCNAME[1]} "2" ${FUNCNAME[2]}
@@ -104,6 +141,12 @@ fi
 
 auto_run() {
     saftey_check
+    motd
+    # Uncommenting below will break other users from having proper perms. Might slow down red team
+    # chmod 600 /etc/shadow
+    # chmod 600 /etc/passwd
+    # chown root:root /etc/shadow
+    # chown root:root /etc/passwd
     echo -e "${GREEN}Looking for ssh authorized_keys...${ENDCOLOR}"
     find / -type f -name "authorized_keys" 2>/dev/null >$logpath/ssh/found-ssh-keys-"$(date "+%H:%M")".txt
     keys_path=$(find / -type f -name "authorized_keys" 2>/dev/null)
@@ -153,7 +196,7 @@ potentially_malicious_services() {
         sleep .2
         command -v $i >/dev/null 2>&1
         if [ $? -eq 0 ]; then
-            echo "$i is installed"
+            echo -e "${YELLOW}$i is installed${ENDCOLOR}"
             echo "$i" >>installed_potentially_malicious.txt
         else
             echo "$i is not installed"
@@ -169,7 +212,7 @@ common_services_checker() {
         sleep .2
         command -v $i >/dev/null 2>&1
         if [ $? -eq 0 ]; then
-            echo "$i is installed"
+            echo "${YELLOW}$i is installed${ENDCOLOR}"
             echo "$i" >>installed_services.txt
 
         else
@@ -185,6 +228,13 @@ common_services_checker() {
             if [[ "$i" == "ssh" || "$i" == "telnet" ]]; then
                 echo -e "${RED}$i${ENDCOLOR} is still installed remove this immediately."
                 FOUND_IMPORTANT+=($i)
+                if [ "$os_type" = "Debian" ]; then 
+                    saftey_check
+                    deb_remove_ssh
+                else    
+                    saftey_check
+                    red_remove_ssh
+                fi
             else
 
                 echo -e "${GREEN}$i${ENDCOLOR} was found this is an important service check it out"
@@ -299,7 +349,7 @@ open_menu() {
 redhat_main_menu() {
     echo -e "OS is:"${GREEN} "$os"${ENDCOLOR}
     echo -e "${GREEN}Services discoverd:${ENDCOLOR} ${FOUND_IMPORTANT[@]}"
-    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Find services" "Services Status"; do
+    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Find services" "Services Status" "Cron Check"; do
         case $ubuntu_option in
         "Remove ssh")
             red_remove_ssh
@@ -327,8 +377,16 @@ redhat_main_menu() {
             service_status
             open_menu
             ;;
-        "Magicx") learning_the_hard_way ;;
-        "users w/o passwords") users_no_pass ;;
+        "Magicx") 
+            learning_the_hard_way 
+            ;;
+        "users w/o passwords")
+            users_no_pass
+            ;;
+        "Cron Check")
+            run_function_if_exists "cron_check"
+            open_menu
+            ;;
             #  "CentOS 7" ) echo "CentOS 7"; break;;
         *)
             echo "Invalid selection"
@@ -389,7 +447,7 @@ Debian_main_menu() {
     clear
     echo -e "OS is:"${GREEN} "$os"${ENDCOLOR}
     echo -e "${GREEN}Services discoverd:${ENDCOLOR} ${FOUND_IMPORTANT[@]}"
-    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "Log IP Monitor" "Find services" "Services Status"; do
+    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "Log IP Monitor" "Find services" "Services Status" "Cron Check"; do
         case $ubuntu_option in
         "Remove ssh") run_function_if_exists "deb_remove_ssh" ;;
         "Change ALL users passwords")
@@ -431,6 +489,10 @@ Debian_main_menu() {
             ;;
         "Magicx") run_function_if_exists "learning_the_hard_way" ;;
 
+        "Cron Check")
+            run_function_if_exists "cron_check"
+            open_menu
+            ;;
         "testing") run_function_if_exists "testingfunc" ;;
 
         *)
@@ -471,6 +533,8 @@ deb_remove_ssh() {
     echo "Pin: version *" | sudo tee -a /etc/apt/preferences.d/block-ssh >/dev/null
     echo "Pin-Priority: -1" | sudo tee -a /etc/apt/preferences.d/block-ssh >/dev/null
     echo "# removed SSH $(date)" >>$logpath/ran_commands.txt
+    sudo apt-get purge telnet* -y
+    log_command "sudo apt-get purge telnet* -y"
     log_command "sudo apt-get remove openssh-server"
     log_command "sudo apt-get purge openssh-server"
     log_command "sudo apt-get autoremove"
@@ -915,10 +979,10 @@ red_firewall_check() {
             log_command "sudo iptables -F"
             log_command "sudo iptables -Z"
             log_command "sudo systemctl restart firewalld"
-            cp firewall-configs/firewalld.conf /etc/firewalld/
+            cp ./dependencies/firewall-configs/firewalld.conf /etc/firewalld/
             sudo firewall-cmd --permanent --new-zone=public
             log_command "sudo firewall-cmd --permanent --new-zone=public"
-            # cp firewall-configs/public.xml /etc/firewalld/zones/
+            # cp ./dependencies/firewall-configs/public.xml /etc/firewalld/zones/
             sudo systemctl restart firewalld
             log_command "cp firewall-configs/firewalld.conf /etc/firewalld/"
             # log_command "cp firewall-configs/public.xml /etc/firewalld/zones/"
@@ -1078,7 +1142,6 @@ backup() {
 }
 # Start
 
-
 clear
 
 usage() {
@@ -1097,7 +1160,7 @@ if [[ $1 == "-h" || $1 == "--help" ]]; then
     usage
     exit
 elif [[ $1 == "-f" || $1 == "--function" ]]; then
-    if [[ -n $2 ]]; then 
+    if [[ -n $2 ]]; then
         source onerun.env
         run_function_if_exists "$2"
     else
@@ -1107,7 +1170,7 @@ elif [[ $1 == "-f" || $1 == "--function" ]]; then
     fi
 elif [[ $1 == "-l" || $1 == "--list" ]]; then
     echo "Defined functions:"
-    declare -F |  cut -d' ' -f3
+    declare -F | cut -d' ' -f3
     exit
 fi
 
@@ -1126,8 +1189,6 @@ if [ $skip_banner -eq 0 ]; then
 else
     echo "Skipping banner"
 fi
-
-
 
 echo -e "${GREEN}Logs will be stored in:${ENDCOLOR} $logpath"
 echo -e "${GREEN}Auto backups will be stored in:${ENDCOLOR} $backuppath"
@@ -1150,5 +1211,3 @@ if [ "$ask_man" = "1" ]; then
 fi
 clear
 open_menu
-
-
