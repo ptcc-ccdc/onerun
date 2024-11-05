@@ -1185,7 +1185,7 @@ fi
 # source requirements.sh
 # source banner.sh
 if [ $skip_banner -eq 0 ]; then
-    ./banner.sh
+    dependencies/banner.sh
 else
     echo "Skipping banner"
 fi
