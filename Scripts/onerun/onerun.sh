@@ -131,13 +131,7 @@ testingfunxc() {
     read -p -e "This is should match what you wanted to do"
 }
 
-if [ $saftey -eq 0 ]; then
-    echo -e "${BOLDRED}The safty variable is NOT set, hitting enter WILL auto run scripts${ENDCOLOR}"
-    pause_script
-    auto_run
-else
-    echo -e "${BOLDRED}The safty variable is set, not running automagic scripts${ENDCOLOR}"
-fi
+
 
 auto_run() {
     saftey_check
@@ -1216,4 +1210,11 @@ if [ "$ask_man" = "1" ]; then
     man_os
 fi
 clear
+if [ $saftey -eq 0 ]; then
+    echo -e "${BOLDRED}The safty variable is NOT set, hitting enter WILL auto run scripts${ENDCOLOR}"
+    pause_script
+    auto_run
+else
+    echo -e "${BOLDRED}The safty variable is set, not running automagic scripts${ENDCOLOR}"
+fi
 open_menu
