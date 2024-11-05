@@ -349,7 +349,7 @@ open_menu() {
 redhat_main_menu() {
     echo -e "OS is:"${GREEN} "$os"${ENDCOLOR}
     echo -e "${GREEN}Services discoverd:${ENDCOLOR} ${FOUND_IMPORTANT[@]}"
-    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Find services" "Services Status" "Cron Check"; do
+    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Find services" "Services Status" "Cron Check" "Exit"; do
         case $ubuntu_option in
         "Remove ssh")
             red_remove_ssh
@@ -386,6 +386,9 @@ redhat_main_menu() {
         "Cron Check")
             run_function_if_exists "cron_check"
             open_menu
+            ;;
+        "Exit")
+            run_function_if_exists "ctl-c"
             ;;
             #  "CentOS 7" ) echo "CentOS 7"; break;;
         *)
@@ -447,7 +450,7 @@ Debian_main_menu() {
     clear
     echo -e "OS is:"${GREEN} "$os"${ENDCOLOR}
     echo -e "${GREEN}Services discoverd:${ENDCOLOR} ${FOUND_IMPORTANT[@]}"
-    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "Log IP Monitor" "Find services" "Services Status" "Cron Check"; do
+    select ubuntu_option in "Remove ssh" "Change ALL users passwords" "Check users that can login" "users w/o passwords" "Check Firewall" "Remove .ssh" "Backup dirs" "Magicx" "Log IP Monitor" "Find services" "Services Status" "Cron Check" "Exit"; do
         case $ubuntu_option in
         "Remove ssh") run_function_if_exists "deb_remove_ssh" ;;
         "Change ALL users passwords")
@@ -495,6 +498,9 @@ Debian_main_menu() {
             ;;
         "testing") run_function_if_exists "testingfunc" ;;
 
+        "Exit")
+            run_function_if_exists "ctl-c"
+            ;;
         *)
             echo "Invalid selection"
             sleep .7
