@@ -36,9 +36,9 @@ sudo systemctl status mysql.service
 # Set up the ZenCart MySQL user
 read -p "Enter the password you want for the ZenCart user: " pass
 echo "Enter the MySQL root password you just set"
-mysql -u root -p -e "CREATE USER 'zencart'@'127.0.0.1' IDENTIFIED BY '$pass'; GRANT SELECT, INSERT, UPDATE, DELETE ON zencart.* TO 'zencart'@'127.0.0.1'; FLUSH PRIVILEGES; EXIT;"
+mysql -u root -p -e "CREATE USER 'zencart'@'localhost' IDENTIFIED BY '$pass'; GRANT SELECT, INSERT, UPDATE, DELETE ON zencart.* TO 'zencart'@'localhost'; FLUSH PRIVILEGES; EXIT;"
 
-echo "The user 'zencart' should now have access to the database 'zencart' on "127.0.0.1" with the password $pass. Press Enter to continue."
+echo "The user 'zencart' should now have access to the database 'zencart' on "localhost" with the password $pass. Press Enter to continue."
 read -p
 
 clear
@@ -109,5 +109,5 @@ sudo ufw --force enable
 sudo ufw reload
 
 # Reminder about database credentials
-echo "Remember, the database user is 'zencart', password: $pass, and the IP is '127.0.0.1' (NOT localhost)."
+echo "Remember, the database user is 'zencart', password: $pass, and the IP is 'localhost' (NOT 127.0.0.1)."
 read -p "Que sera, sera"
