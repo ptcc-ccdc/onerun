@@ -17,6 +17,69 @@ handle_error() {
     dialog --msgbox "$1" 10 40
 }
 
+# Function to manually select the operating system
+man_os() {
+    select os in "Debian" "Ubuntu" "Fedora" "Splunk" "CentOS 7"; do
+        case $os in
+        "Debian")
+            os="Debian" os_type="Debian"
+            break
+            ;;
+        "Ubuntu")
+            os="Ubuntu" os_type="Debian"
+            break
+            ;;
+        "Fedora")
+            os="Fedora" os_type="redhat"
+            break
+            ;;
+        "Splunk")
+            os="Splunk" os_type="redhat"
+            break
+            ;;
+        "CentOS 7")
+            os="CentOS 7" os_type="redhat"
+            break
+            ;;
+        *) echo "${YELLOW}Invalid selection${ENDCOLOR}" ;;
+        esac
+    done
+}
+
+# Function to automatically detect the operating system
+auto_os() {
+    os=$(grep "ID=" /etc/os-release | sed '/^V/d' | cut -c 4-)
+    if [ "$os" = "debian" ]; then
+        os="Debian" os_type="Debian"
+        return
+    elif [ "$os" = "ubuntu" ]; then
+        os="Ubuntu" os_type="Debian"
+        return
+    elif [ "$os" = "fedora" ]; then
+        os="Fedora" os_type="redhat"
+        return
+    elif [ "$os" = "centos" ]; then
+        os="Centos" os_type="redhat"
+        return
+    else
+        echo -e "${YELLOW}Failed to determine OS, going stick boi${ENDCOLOR}"
+        man_os
+    fi
+}
+
+# Function to open the main menu based on OS type
+open_menu() {
+    if [ "$os_type" = "redhat" ]; then
+        clear
+        redhat_main_menu
+    elif [ "$os_type" = "Debian" ]; then
+        clear
+        Debian_main_menu
+    else
+        echo "Uh, you shouldn't see this"
+        man_os
+    fi
+}
 # Function to handle Ctrl-C (SIGINT) interruption
 ctl-c() {
     clear
@@ -138,6 +201,7 @@ testingfunxc() {
 
 # Function to run automatic tasks
 auto_run() {
+    auto_os
     safety_check
     motd
     # Uncommenting below will restrict other users from proper permissions, potentially slowing down the red team
@@ -280,69 +344,7 @@ service_status() {
     pause_script
 }
 
-# Function to manually select the operating system
-man_os() {
-    select os in "Debian" "Ubuntu" "Fedora" "Splunk" "CentOS 7"; do
-        case $os in
-        "Debian")
-            os="Debian" os_type="Debian"
-            break
-            ;;
-        "Ubuntu")
-            os="Ubuntu" os_type="Debian"
-            break
-            ;;
-        "Fedora")
-            os="Fedora" os_type="redhat"
-            break
-            ;;
-        "Splunk")
-            os="Splunk" os_type="redhat"
-            break
-            ;;
-        "CentOS 7")
-            os="CentOS 7" os_type="redhat"
-            break
-            ;;
-        *) echo "${YELLOW}Invalid selection${ENDCOLOR}" ;;
-        esac
-    done
-}
 
-# Function to automatically detect the operating system
-auto_os() {
-    os=$(grep "ID=" /etc/os-release | sed '/^V/d' | cut -c 4-)
-    if [ "$os" = "debian" ]; then
-        os="Debian" os_type="Debian"
-        return
-    elif [ "$os" = "ubuntu" ]; then
-        os="Ubuntu" os_type="Debian"
-        return
-    elif [ "$os" = "fedora" ]; then
-        os="Fedora" os_type="redhat"
-        return
-    elif [ "$os" = "centos" ]; then
-        os="Centos" os_type="redhat"
-        return
-    else
-        echo -e "${YELLOW}Failed to determine OS, going stick boi${ENDCOLOR}"
-        man_os
-    fi
-}
-
-# Function to open the main menu based on OS type
-open_menu() {
-    if [ "$os_type" = "redhat" ]; then
-        clear
-        redhat_main_menu
-    elif [ "$os_type" = "Debian" ]; then
-        clear
-        Debian_main_menu
-    else
-        echo "Uh, you shouldn't see this"
-        man_os
-    fi
-}
 
 # Main menu for Red Hat based systems
 redhat_main_menu() {
