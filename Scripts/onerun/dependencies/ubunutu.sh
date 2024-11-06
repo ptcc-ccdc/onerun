@@ -42,7 +42,7 @@ read -p "Enter the password you want for the ZenCart user: " pass
 echo "Enter the MySQL root password you just set"
 mysql -u root -p -e "CREATE USER 'zencart'@'localhost' IDENTIFIED BY '$pass'; GRANT SELECT, INSERT, UPDATE, DELETE ON zencart.* TO 'zencart'@'localhost'; FLUSH PRIVILEGES; EXIT;"
 
-echo "The user 'zencart' should now have access to the database 'zencart' with the password $pass. Press Enter to continue."
+echo "The user 'zencart' should now have access to the database 'zencart' on "localhost" with the password $pass. Press Enter to continue."
 read -p
 
 clear
@@ -78,4 +78,4 @@ sudo ufw reload
 
 # Reminder about database credentials
 echo "Remember, the database user is 'zencart', password: $pass, and the IP is 'localhost' (NOT 127.0.0.1)."
-echo "Que sera, sera"
+read -p "Que sera, sera"
