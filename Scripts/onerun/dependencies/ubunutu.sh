@@ -52,7 +52,7 @@ mkdir /var/www/html
 
 echo "Downloading ZenCart..."
 wget -O /srv/zen-cart.zip https://github.com/zencart/zencart/archive/refs/tags/v1.5.6.zip
-unzip /srv/zen-cart.zip -d /tmp/zen-cart
+unzip /srv/zen-cart.zip -d /tmp/
 mv /tmp/zen* /var/www/zen-cart
 echo "ZenCart downloaded and extracted."
 
@@ -87,10 +87,10 @@ clear
 sudo chown -R www-data:www-data /var/www/
 
 # Set directory permissions to 755 (drwxr-xr-x)
-sudo find /var/www/html/zen-cart -type d -exec chmod 755 {} \;
+sudo find /var/www/ -type d -exec chmod 755 {} \;
 
 # Set file permissions to 644 (-rw-r--r--)
-sudo find /var/www/html/zen-cart -type f -exec chmod 644 {} \;
+sudo find /var/www/ -type f -exec chmod 644 {} \;
 
 # Restart Apache service
 
