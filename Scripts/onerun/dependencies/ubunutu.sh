@@ -20,13 +20,10 @@ sudo apt-get install -y php php7.2-bcmath php7.2-ctype php7.2-curl php7.2-gd php
 sudo cp /etc/mysql/my.cnf /etc/mysql/my.cnf.bak
 
 # Update the bind address in the MySQL configuration
-sudo awk '/
-
-\[mysqld\]
-
-/{print; print "bind-address = 127.0.0.1"; next}1' /etc/mysql/my.cnf.bak > /etc/mysql/my.cnf
 
 
+echo "[mysqld]" > /etc/mysql/my.cnf
+echo "bind-address = 127.0.0.1" >> /etc/mysql/my.cnf
 # Prompt the user to verify the bind address
 read -p "Verify 'bind-address = 127.0.0.1' is set in /etc/mysql/my.cnf (Press Enter to continue)"
 sudo nano /etc/mysql/my.cnf
@@ -50,8 +47,8 @@ clear
 
 # Backup existing web directory and download ZenCart
 mkdir /srv/zen-cart-backup
-mv /var/www/html /srv/zen-cart-backup
-wget -O /var/www/html/zen-cart.zip https://github.com/zencart/zencart/archive/refs/tags/v1.5.8a.zip
+cp -ra /var/www/html /srv/zen-cart-backup
+wget -O /var/www/html/zen-cart.zip https://github.com/zencart/zencart/archive/refs/tags/v1.5.6.zip
 unzip /var/www/html/zen-cart.zip -d /var/www/html/zen-cart
 
 # Prompt the user to edit the Apache configuration
