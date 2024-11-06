@@ -112,9 +112,8 @@ pause_script() {
 log_command() {
     echo -e "At $(date) the user $USER ran: $1" >>"$logpath/ran_commands.txt"
 }
+    
 
-mkdir -p $backuppath/backups $logpath/user-logs $logpath/ssh
-log_command "mkdir -p $onerun_root/backups $onerun_root/logs/user-logs"
 
 # if [ $date == "01/25/25" ]; then
 #     echo "Good Luck"
@@ -201,6 +200,9 @@ testingfunxc() {
 
 # Function to run automatic tasks
 auto_run() {
+    source onerun.env
+    mkdir -p $backuppath/backups $logpath/user-logs $logpath/ssh
+    log_command "mkdir -p $onerun_root/backups $onerun_root/logs/user-logs"
     auto_os
     safety_check
     motd
