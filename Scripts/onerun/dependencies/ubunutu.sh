@@ -1,5 +1,5 @@
 #!/bin/bash
-
+source /etc/apache2/envvars
 echo "This script will install ZenCart"
 
 # Prompt the user for MySQL secure installation
@@ -20,11 +20,12 @@ sudo apt-get install -y php php7.2-bcmath php7.2-ctype php7.2-curl php7.2-gd php
 sudo cp /etc/mysql/my.cnf /etc/mysql/my.cnf.bak
 
 # Update the bind address in the MySQL configuration
-sudo awk '/^
+sudo awk '/
 
 \[mysqld\]
 
-$/ {print; print "bind-address = 127.0.0.1"; next}1' /etc/mysql/my.cnf.bak > /etc/mysql/my.cnf
+/{print; print "bind-address = 127.0.0.1"; next}1' /etc/mysql/my.cnf.bak > /etc/mysql/my.cnf
+
 
 # Prompt the user to verify the bind address
 read -p "Verify 'bind-address = 127.0.0.1' is set in /etc/mysql/my.cnf (Press Enter to continue)"
@@ -40,9 +41,9 @@ sudo systemctl status mysql.service
 # Set up the ZenCart MySQL user
 read -p "Enter the password you want for the ZenCart user: " pass
 echo "Enter the MySQL root password you just set"
-mysql -u root -p -e "CREATE USER 'zencart'@'localhost' IDENTIFIED BY '$pass'; GRANT SELECT, INSERT, UPDATE, DELETE ON zencart.* TO 'zencart'@'localhost'; FLUSH PRIVILEGES; EXIT;"
+mysql -u root -p -e "CREATE USER 'zencart'@'127.0.0.1' IDENTIFIED BY '$pass'; GRANT SELECT, INSERT, UPDATE, DELETE ON zencart.* TO 'zencart'@'127.0.0.1'; FLUSH PRIVILEGES; EXIT;"
 
-echo "The user 'zencart' should now have access to the database 'zencart' on "localhost" with the password $pass. Press Enter to continue."
+echo "The user 'zencart' should now have access to the database 'zencart' on "127.0.0.1" with the password $pass. Press Enter to continue."
 read -p
 
 clear
@@ -54,11 +55,22 @@ wget -O /var/www/html/zen-cart.zip https://github.com/zencart/zencart/archive/re
 unzip /var/www/html/zen-cart.zip -d /var/www/html/zen-cart
 
 # Prompt the user to edit the Apache configuration
+read -p "Check what user apache is running as change it if you need to it should be www-data"
+nano /etc/apache2/envvars
+mv /etc/apache2/sites-enabled/openshop.conf /etc/apache2/sites-enabled/openshop.conf.back 
+cp dependencies/www-conf/openshop.conf /etc/apache2/sites-enabled/openshop.conf
 echo "Now you have to edit /etc/apache2/sites-enabled/openshop.conf and change 'var/www/html/openshop' to 'zen-cart'. Press Enter to continue."
 read -p
 sudo nano /etc/apache2/sites-enabled/openshop.conf
 
 clear
+sudo chown -R www-data:www-data /var/www/
+
+# Set directory permissions to 755 (drwxr-xr-x)
+sudo find /var/www/html/zen-cart -type d -exec chmod 755 {} \;
+
+# Set file permissions to 644 (-rw-r--r--)
+sudo find /var/www/html/zen-cart -type f -exec chmod 644 {} \;
 
 # Restart Apache service
 echo "Restarting Apache2..."
@@ -77,5 +89,5 @@ sudo ufw --force enable
 sudo ufw reload
 
 # Reminder about database credentials
-echo "Remember, the database user is 'zencart', password: $pass, and the IP is 'localhost' (NOT 127.0.0.1)."
+echo "Remember, the database user is 'zencart', password: $pass, and the IP is '127.0.0.1' (NOT localhost)."
 read -p "Que sera, sera"

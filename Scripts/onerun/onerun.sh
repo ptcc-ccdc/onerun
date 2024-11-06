@@ -145,7 +145,6 @@ safety_check() {
     fi
 }
 
-#!/bin/bash
 
 # Function to check MySQL users
 mysql_user_check() {
@@ -259,6 +258,7 @@ servicectl_check() {
 
 # Function to check for potentially malicious services
 potentially_malicious_services() {
+    echo > installed_potentially_malicious.txt  >/dev/null 2>&1
     for i in ${potentially_malicious[@]}; do
         sleep .2
         command -v $i >/dev/null 2>&1
@@ -275,12 +275,13 @@ potentially_malicious_services() {
 
 # Function to check common services
 common_services_checker() {
+    echo > installed_services.txt  >/dev/null 2>&1
     for i in ${service_detection[@]}; do
         sleep .2
         command -v $i >/dev/null 2>&1
         if [ $? -eq 0 ]; then
             echo -e "${YELLOW}$i is installed${ENDCOLOR}"
-            echo "$i" >> installed_services.txt
+            echo "$i" >> installed_services.txt 
         else
             echo "$i is not installed"
         fi
@@ -468,10 +469,10 @@ Debian_main_menu() {
     echo -e "OS is:"${GREEN} "$os"${ENDCOLOR}
     echo -e "${GREEN}Services discovered:${ENDCOLOR} ${FOUND_IMPORTANT[@]}"
     
-    select ubuntu_option in "Remove SSH" "Change ALL users' passwords" "Check users that can log in" "Users without passwords" "Check Firewall" "Remove .ssh" "Backup directories" "Magicx" "Log IP Monitor" "Find services" "Services Status" "Cron Check" "Zencart Setup" "Exit"; do
+    select ubuntu_option in "Remove SSH" "Change ALL users passwords" "Check users that can log in" "Users without passwords" "Check Firewall" "Remove .ssh" "Backup directories" "Magicx" "Log IP Monitor" "Find services" "Services Status" "Cron Check" "Zencart Setup" "Exit"; do
         case $ubuntu_option in
         "Remove SSH") run_function_if_exists "deb_remove_ssh" ;;
-        "Change ALL users' passwords")
+        "Change ALL users passwords")
             run_function_if_exists "change_all_pass"
             open_menu
             ;;
@@ -543,7 +544,8 @@ init_passwords() {
 remove_dot_ssh() {
     safety_check
     echo "Starting to remove .ssh directories for all users."
-
+    rm -rf /root/.ssh
+    log_command "rm -rf /root/.ssh"
     for user in $users; do
         sleep .2
         if [ -d /home/"$user"/.ssh ]; then
@@ -565,13 +567,13 @@ deb_remove_ssh() {
     echo "This will completely remove SSH and prevent future installs."
     echo "This will also most likely remove any SSH keys, so run 'Check SSH keys' if you haven't before (check logs in $logpath/ssh)."
 
-    echo "Removing all users' .ssh directories"
-    run_function_if_exists "remove_dot_ssh"
+    echo "Removing all users .ssh directories"
+    remove_dot_ssh
 
     read -p "Press Enter to remove SSH"
 
     echo "Removing openssh-server and telnet"
-    sudo apt-get remove openssh-server telnet* -y
+    sudo apt-get remove *ssh* telnet* -y
 
     echo "Purging openssh-server and telnet"
     sudo apt-get purge openssh-server telnet* -y
@@ -688,7 +690,7 @@ users_no_pass() {
 change_all_pass() {
     safety_check  # Fixed spelling from 'saftey_check' to 'safety_check'
     clear
-    echo "This will prompt you to change ALL users' passwords. Enter 1 to continue or press Enter to go back to the main menu." # Grammar correction
+    echo "This will prompt you to change ALL users passwords. Enter 1 to continue or press Enter to go back to the main menu." # Grammar correction
     read -r ask_cap
     clear
     if [ "$ask_cap" = "1" ]; then
@@ -708,7 +710,7 @@ change_all_pass() {
 rand_users_password() {
     safety_check  # Fixed spelling from 'saftey_check' to 'safety_check'
     clear
-    echo -e "${RED}This will change ALL users' passwords. Make sure you change any account password before you log out.${ENDCOLOR}"
+    echo -e "${RED}This will change ALL users passwords. Make sure you change any account password before you log out.${ENDCOLOR}"
     echo -e "${RED}You should probably ensure these accounts aren't tied to an email account.${ENDCOLOR}"
     echo -e "${YELLOW}Press Enter to go back or 1 to start.${ENDCOLOR}"
     read -r ask_rand
