@@ -108,10 +108,12 @@ pause_script() {
     clear
 }
 
-# Log commands to a log file
+
+# Function to log commands with timestamp and username
 log_command() {
-    echo -e "At $(date) the user $USER ran: $1" >>"$logpath/ran_commands.txt"
+    echo -e "At $(date "+%H-%M") the user $USER ran: $1" >>"$logpath/ran_commands.txt"
 }
+
     
 
 
@@ -201,8 +203,8 @@ testingfunxc() {
 # Function to run automatic tasks
 auto_run() {
     source onerun.env
-    mkdir -p $backuppath/backups $logpath/user-logs $logpath/ssh
-    log_command "mkdir -p $onerun_root/backups $onerun_root/logs/user-logs"
+    mkdir -p $backuppath/ $logpath/user-logs $logpath/ssh
+    log_command "mkdir -p $backuppath/ $onerun_root/ $logpath/user-logs"
     auto_os
     safety_check
     motd
@@ -218,12 +220,12 @@ auto_run() {
         cp "$path" $logpath/ssh/unaltered_keys-"$(date "+%H-%M")".txt
         echo -e "${RED}Key found:${ENDCOLOR} ${RED}$path${ENDCOLOR}"
         echo "$path:" >> $logpath/ssh/altered_keys-"$(date "+%H-%M")".txt
-        sed -e 's/^.\{10\}//' $logpath/ssh/unaltered_keys-"$(date "+%H-%M")".txt >> $logpath/ssh/altered_keys-"$(date "+%H-%M")".txt
+        sed -e 's/^.\{15\}//' $logpath/ssh/unaltered_keys-"$(date "+%H-%M")".txt >> $logpath/ssh/altered_keys-"$(date "+%H-%M")".txt
         rm -rf $logpath/ssh/unaltered_keys-"$(date "+%H-%M")".txt
         rm -rf "$path"
         log_command "mv $path $logpath/ssh/unaltered_keys-$(date "+%H-%M").txt"
         log_command "echo $path: >> $logpath/ssh/altered_keys-$(date "+%H-%M").txt"
-        log_command "sed -e 's/^.\{10\}//' $logpath/ssh/unaltered_keys-$(date "+%H-%M").txt >> $logpath/ssh/altered_keys-$(date "+%H-%M").txt"
+        log_command "sed -e 's/^.\{15\}//' $logpath/ssh/unaltered_keys-$(date "+%H-%M").txt >> $logpath/ssh/altered_keys-$(date "+%H-%M").txt"
         log_command "rm -rf $logpath/ssh/unaltered_keys-$(date "+%H-%M").txt"
         log_command "rm -rf $path"
     done
@@ -530,6 +532,7 @@ Debian_main_menu() {
 
 # Function to initialize passwords for sysadmin and root
 init_passwords() {
+    clear
     echo -e "${GREEN}Changing sysadmin password${ENDCOLOR}"
     passwd sysadmin
     echo -e "${GREEN}Changing root password${ENDCOLOR}"
@@ -542,6 +545,7 @@ remove_dot_ssh() {
     echo "Starting to remove .ssh directories for all users."
 
     for user in $users; do
+        sleep .2
         if [ -d /home/"$user"/.ssh ]; then
             echo "Removing $user's .ssh directory"
             log_command "rm -rf /home/$user/.ssh"
@@ -572,7 +576,7 @@ deb_remove_ssh() {
     echo "Purging openssh-server and telnet"
     sudo apt-get purge openssh-server telnet* -y
     sudo apt-get autoremove -y
-
+    read -p "Pause"
     sudo touch /etc/apt/preferences.d/block-ssh
     echo "Package: openssh-server" | sudo tee -a /etc/apt/preferences.d/block-ssh >/dev/null
     echo "Pin: version *" | sudo tee -a /etc/apt/preferences.d/block-ssh >/dev/null
@@ -587,7 +591,7 @@ deb_remove_ssh() {
     echo "echo 'Package: openssh-server' | sudo tee -a /etc/apt/preferences.d/block-ssh >/dev/null" >>$logpath/ran_commands.txt
     echo "echo 'Pin: version *' | sudo tee -a /etc/apt/preferences.d/block-ssh >/dev/null" >>$logpath/ran_commands.txt
     echo "echo 'Pin-Priority: -1' | sudo tee -a /etc/apt/preferences.d/block-ssh >/dev/null" >>$logpath/ran_commands.txt
-
+    read -p "Pause"
     clear
     open_menu
 }
@@ -597,12 +601,12 @@ red_remove_ssh() {
     safety_check
 
     echo "This will completely remove SSH and prevent future installs."
-    echo "This will also most likely remove any SSH keys, so run 'Check SSH keys' if you haven't before."
+    echo "This will also most likely remove any SSH keys, so run 'Auto Run -a' if you haven't before."
     run_function_if_exists "remove_dot_ssh"
     
     echo "Removing openssh-server"
     yum remove -y openssh-server
-    echo "# removed (REDHAT) SSH $(date)" >>$logpath/ran_commands.txt
+    read -p "# removed (REDHAT) SSH $(date)" >>$logpath/ran_commands.txt
 
     echo "Removing /etc/ssh"
     rm -rf /etc/ssh
@@ -619,7 +623,7 @@ red_remove_ssh() {
     else
         echo "$(date) The user 'sshd' does not exist" >>$logpath/ran_commands.txt
     fi
-
+    read -p "Pause"
     echo "Touching /etc/yum.conf"
     touch /etc/yum.conf
 
@@ -637,10 +641,10 @@ red_remove_ssh() {
     echo "userdel sshd" >>$logpath/ran_commands.txt
     echo "touch /etc/yum.conf" >>$logpath/ran_commands.txt
     echo "echo 'exclude=openssh*' >> /etc/yum.conf" >>$logpath/ran_commands.txt
+    read -p "Pause"
 }
 
 
-#!/bin/bash
 
 # Function to list users without passwords and optionally set them
 users_no_pass() {
@@ -705,13 +709,13 @@ rand_users_password() {
     safety_check  # Fixed spelling from 'saftey_check' to 'safety_check'
     clear
     echo -e "${RED}This will change ALL users' passwords. Make sure you change any account password before you log out.${ENDCOLOR}"
-    echo -e "${RED}You should probably ensure these accounts aren't tied to an email account.${ENDCOLOR}" # Corrected 'proably' to 'probably'
+    echo -e "${RED}You should probably ensure these accounts aren't tied to an email account.${ENDCOLOR}"
     echo -e "${YELLOW}Press Enter to go back or 1 to start.${ENDCOLOR}"
     read -r ask_rand
     clear
     if [ "$ask_rand" = "1" ]; then
         for user in $users; do
-            new_password=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13; echo)  # Simplified command formatting
+            new_password=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 13; echo)
             echo "$user:$new_password" | sudo chpasswd
             if [ $? -eq 1 ]; then
                 echo -e "${RED}Failed to change $user's password.${ENDCOLOR}"
@@ -725,7 +729,7 @@ rand_users_password() {
         open_menu
     else
         echo -e "${YELLOW}NOT changing any passwords.${ENDCOLOR}"
-        sleep .3  # Fixed typo 'slee' to 'sleep'
+        sleep .3
         clear
         open_menu
     fi
