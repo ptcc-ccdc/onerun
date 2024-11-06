@@ -1,5 +1,7 @@
 #!/bin/bash
 source /etc/apache2/envvars
+mv /etc/apt/sources.list /etc/apt/sources.list.old
+cp dependencies/sources/ubuntu18/sources.list /etc/apt/sources.list
 echo "This script will install ZenCart"
 
 # Prompt the user for MySQL secure installation
@@ -22,9 +24,9 @@ sudo cp /etc/mysql/my.cnf /etc/mysql/my.cnf.bak
 # Update the bind address in the MySQL configuration
 
 echo "[mysqld]" >/etc/mysql/my.cnf
-echo "bind-address = 127.0.0.1" >>/etc/mysql/my.cnf
+echo "bind-address = localhost" >>/etc/mysql/my.cnf
 # Prompt the user to verify the bind address
-read -p "Verify 'bind-address = 127.0.0.1' is set in /etc/mysql/my.cnf (Press Enter to continue)"
+read -p "Verify 'bind-address = localhost' is set in /etc/mysql/my.cnf (Press Enter to continue)"
 sudo nano /etc/mysql/my.cnf
 
 clear
@@ -36,7 +38,7 @@ sudo systemctl status mysql.service
 # Set up the ZenCart MySQL user
 read -p "Enter the password you want for the ZenCart user: " pass
 echo "Enter the MySQL root password you just set"
-mysql -u root -p -e "CREATE USER 'zencart'@'localhost' IDENTIFIED BY '$pass'; GRANT SELECT, INSERT, UPDATE, DELETE ON zencart.* TO 'zencart'@'localhost'; FLUSH PRIVILEGES; EXIT;"
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS zencart; CREATE USER 'zencart'@'localhost' IDENTIFIED BY '$pass'; GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP ON zencart.* TO 'zencart'@'localhost'; FLUSH PRIVILEGES; EXIT;"
 
 echo "The user 'zencart' should now have access to the database 'zencart' on "localhost" with the password $pass. Press Enter to continue."
 read -p
@@ -110,4 +112,8 @@ sudo ufw reload
 
 # Reminder about database credentials
 echo "Remember, the database user is 'zencart', password: $pass, and the IP is 'localhost' (NOT 127.0.0.1)."
-read -p "Que sera, sera"
+unset pass
+read -p "Go install the website http://172.20.242.10 then come back and hit enter to clean up"
+echo "Que sera, sera"
+rm -rf /var/www/html/zen-cart/zc_install
+

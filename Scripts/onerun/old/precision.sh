@@ -1,6 +1,6 @@
 #!/bin/bash
 source onerun.env
-
+# OLD DO NOT USE. USE dependencies/ecom-fix.sh dependencies/ubuntu.sh
 ecom_fix() {
 
     #TODO
