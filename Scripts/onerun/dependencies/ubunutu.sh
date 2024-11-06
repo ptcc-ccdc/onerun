@@ -51,8 +51,9 @@ mv /var/www/html /var/www/html-old
 mkdir /var/www/html
 
 echo "Downloading ZenCart..."
-wget -O /var/www/html/zen-cart.zip https://github.com/zencart/zencart/archive/refs/tags/v1.5.6.zip
-unzip /var/www/html/zen-cart.zip -d /var/www/html/zen-cart
+wget -O /srv/zen-cart.zip https://github.com/zencart/zencart/archive/refs/tags/v1.5.6.zip
+unzip /srv/zen-cart.zip -d /tmp/zen-cart
+mv /tmp/zen* /var/www/zen-cart
 echo "ZenCart downloaded and extracted."
 
 read -p "Check what user apache is running as (should be www-data). Press Enter to continue..."
