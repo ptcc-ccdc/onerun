@@ -1,9 +1,9 @@
 #!/bin/bash
 source /etc/apache2/envvars
 mv /etc/apt/sources.list /etc/apt/sources.list.old
-cp dependencies/sources/ubuntu18/sources.list /etc/apt/sources.list
+cp sources/ubuntu18/sources.list /etc/apt/sources.list
 echo "This script will install ZenCart"
-
+sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/zencart-selfsigned.key -out /etc/ssl/zencart-selfsigned.crt
 # Prompt the user for MySQL secure installation
 read -p "Press Enter to run MySQL secure installation. Enter 1 to skip or press Enter to continue (This will take down the website on the first run): " mysql_ask
 if [ "$mysql_ask" != "1" ]; then
@@ -38,7 +38,7 @@ sudo systemctl status mysql.service
 # Set up the ZenCart MySQL user
 read -p "Enter the password you want for the ZenCart user: " pass
 echo "Enter the MySQL root password you just set"
-mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS zencart; CREATE USER 'zencart'@'localhost' IDENTIFIED BY '$pass'; GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP ON zencart.* TO 'zencart'@'localhost'; FLUSH PRIVILEGES; EXIT;"
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS zencart; DROP USER 'zencart'@'localhost'; CREATE USER 'zencart'@'localhost' IDENTIFIED BY '$pass'; GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP ON zencart.* TO 'zencart'@'localhost'; FLUSH PRIVILEGES; EXIT;"
 
 echo "The user 'zencart' should now have access to the database 'zencart' on "localhost" with the password $pass. Press Enter to continue."
 read -p
@@ -47,15 +47,18 @@ clear
 
 echo "Creating backup of the existing web directory..."
 mkdir -p /srv/zen-cart-backup
-cp -ra /var/www/html /srv/zen-cart-backup
+mv  /var/www/* /srv/zen-cart-backup/
 echo "Backup created at /srv/zen-cart-backup"
-mv /var/www/html /var/www/html-old
-mkdir /var/www/html
+# mv /var/www/html /var/www/html-old
+# mkdir /var/www/html
 
 echo "Downloading ZenCart..."
+rm -rf /tmp/zen*
 wget -O /srv/zen-cart.zip https://github.com/zencart/zencart/archive/refs/tags/v1.5.6.zip
 unzip /srv/zen-cart.zip -d /tmp/
-mv /tmp/zen* /var/www/zen-cart
+mkdir -p /var/www/zen-cart
+chown www-data:www-data /var/www/zen-cart
+mv /tmp/zen*/* /var/www/zen-cart
 echo "ZenCart downloaded and extracted."
 
 read -p "Check what user apache is running as (should be www-data). Press Enter to continue..."
@@ -71,14 +74,14 @@ sudo a2dissite openshop.conf
 sudo a2dissite 000-default.conf
 
 echo "Copying new configuration file..."
-sudo cp dependencies/www-conf/openshop.conf /etc/apache2/sites-available/openshop.conf
+sudo cp www-conf/openshop.conf /etc/apache2/sites-available/openshop.conf
 
-read -p "Now edit /etc/apache2/sites-available/openshop.conf and change 'var/www/html/openshop' to 'var/www/html/zen-cart'. Press Enter to continue..."
+read -p "Now edit /etc/apache2/sites-available/openshop.conf and change '/var/www/html/openshop' to '/var/www/' (Should be set already from www-conf/openshop.conf). Press Enter to continue..."
 sudo nano /etc/apache2/sites-available/openshop.conf
 
 echo "Enabling the new openshop.conf..."
 sudo a2ensite openshop.conf
-
+sudo a2enmod ssl
 echo "Checking Apache configuration..."
 sudo apache2ctl configtest
 
@@ -99,7 +102,7 @@ sudo find /var/www/ -type f -exec chmod 644 {} \;
 echo "Restarting Apache2..."
 sudo systemctl restart apache2
 
-echo "If everything went well, go to http://172.20.242.10/zen-cart/zc_install"
+echo "If everything went well, go to https://172.20.242.10/zen-cart/zc_install"
 
 # Update UFW firewall rules
 sudo ufw --force disable
@@ -113,7 +116,7 @@ sudo ufw reload
 # Reminder about database credentials
 echo "Remember, the database user is 'zencart', password: $pass, and the IP is 'localhost' (NOT 127.0.0.1)."
 unset pass
-read -p "Go install the website http://172.20.242.10 then come back and hit enter to clean up"
+read -p "Go install the website https://172.20.242.10 then come back and hit enter to clean up"
 echo "Que sera, sera"
-rm -rf /var/www/html/zen-cart/zc_install
+rm -rf /var/www/zen-cart/zc_install
 
