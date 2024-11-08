@@ -1,0 +1,37 @@
+
+services:
+  mysql:
+    container_name: ps-mysql
+    image: mysql:5.7
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: "7W77&7*^hpYQV"
+      MYSQL_DATABASE: prestashop
+    networks:
+      - prestashop_network
+    volumes:
+      - ./db_data:/var/lib/mysql
+
+  prestashop:
+    container_name: prestashop
+    image: prestashop/prestashop:latest
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    ports:
+      - 8080:80
+    environment:
+      DB_SERVER: ps-mysql
+      DB_NAME: prestashop
+      DB_USER: root
+      DB_PASSWD: "7W77&7*^hpYQV"
+      PS_FOLDER_ADMIN: admin4577
+      PS_FOLDER_INSTALL: install4577
+    networks:
+      - prestashop_network
+    volumes:
+      - ./psdata:/var/www/html
+
+networks:
+  prestashop_network:
+    driver: bridge
