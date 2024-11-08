@@ -1,0 +1,37 @@
+
+services:
+  mysql:
+    container_name: ps-mysql
+    image: jpb418/ccdc:prestashop-db
+    restart: unless-stopped
+    # environment:
+    #   MYSQL_ROOT_PASSWORD: "7W77&7*^hpYQV"
+    #   MYSQL_DATABASE: prestashop
+    networks:
+      - prestashop_network_testing
+    # volumes:                            # Uncomment to have persistence to save the data across machies you have to build the images and push them to there respective repo (Same thing for presta shop)
+    #   - ../database/db_data:/var/lib/mysql
+
+  prestashop:
+    container_name: prestashop
+    image: jpb418/ccdc:prestashop
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    ports:
+      - 8080:80 # Admin is admin@admin.com WFpC7nnXZE@bF
+    # environment:
+    #   DB_SERVER: ps-mysql
+    #   DB_NAME: prestashop
+    #   DB_USER: root
+    #   DB_PASSWD: "7W77&7*^hpYQV"
+    #   PS_FOLDER_ADMIN: admin4577
+    #   PS_FOLDER_INSTALL: install4577
+    networks:
+      - prestashop_network_testing
+    volumes:
+      - ../prestashop/psdata:/var/www/html
+
+networks:
+  prestashop_network_testing:
+    driver: bridge
