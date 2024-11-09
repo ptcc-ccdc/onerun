@@ -1,3 +1,5 @@
 Scripts/k3s/manifests/Ecom/prestashop/psdata
 
 Scripts/k3s/manifests/Ecom/database/db_data
+
+Scripts/k3s/manifests/Ecom/docker-compose.yaml
