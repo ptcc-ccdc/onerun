@@ -1,14 +1,14 @@
 #!/bin/bash
-
+set -o history
 trap ctl-c SIGINT
 
 # Function to check if a function exists and run it
 run_function_if_exists() {
     if declare -F "$1" >/dev/null 2>&1; then
         $1
-        open_menu
+        # open_menu
     else
-        handle_error "Function '$1' does not exist!"
+        echo "Function '$1' does not exist!"
     fi
 }
 
@@ -118,10 +118,10 @@ log_command() {
 #        sleep 2
 # fi
 
-safety_check() {
+saftey_check() {
     if [ $saftey -eq 1 ]; then
         echo -e "${RED}You are trying to run ${BOLDRED}${FUNCNAME[1]}${ENDCOLOR}${RED} whith the safty on. This is a destructive action.${ENDCOLOR}"
-        echo -e "${RED}Type${ENDCOLOR} ${BOLDRED}I KNOW${ENDCOLOR}${RED} to temporarily set saftey = 0 (OFF)${ENDCOLOR} ${GREEN}"
+        echo -e "${RED}Type${ENDCOLOR} ${BOLDRED}I KNOW${ENDCOLOR}${RED} to temporarily set saftey = 0 (OFF) (Enter to go back)${ENDCOLOR} ${GREEN}"
         read skip_safe
         if [ "$skip_safe" = "I KNOW" ]; then
             pause_script
@@ -189,7 +189,7 @@ remove_cron() {
 
 # Testing function
 testingfunxc() {
-    safety_check
+    saftey_check
     echo "0:" ${FUNCNAME[0]} "1:" ${FUNCNAME[1]} "2:" ${FUNCNAME[2]}
     read -p -e "This should match what you wanted to do"
 }
@@ -200,7 +200,7 @@ auto_run() {
     mkdir -p $backuppath/ $logpath/user-logs $logpath/ssh
     log_command "mkdir -p $backuppath/ $onerun_root/ $logpath/user-logs"
     auto_os
-    safety_check
+    saftey_check
     motd
     init_passwords
     # Uncommenting below will restrict other users from proper permissions, potentially slowing down the red team
@@ -256,7 +256,7 @@ servicectl_check() {
 potentially_malicious_services() {
     echo >installed_potentially_malicious.txt >/dev/null 2>&1
     for i in ${potentially_malicious[@]}; do
-        sleep .2
+        sleep .1
         command -v $i >/dev/null 2>&1
         if [ $? -eq 0 ]; then
             echo -e "${YELLOW}$i is installed${ENDCOLOR}"
@@ -273,7 +273,7 @@ potentially_malicious_services() {
 common_services_checker() {
     echo >installed_services.txt >/dev/null 2>&1
     for i in ${service_detection[@]}; do
-        sleep .2
+        sleep .1
         command -v $i >/dev/null 2>&1
         if [ $? -eq 0 ]; then
             echo -e "${YELLOW}$i is installed${ENDCOLOR}"
@@ -292,10 +292,10 @@ common_services_checker() {
                 echo -e "${RED}$i${ENDCOLOR} is still installed, remove this immediately."
                 FOUND_IMPORTANT+=($i)
                 if [ "$os_type" = "Debian" ]; then
-                    safety_check
+                    # saftey_check
                     deb_remove_ssh
                 else
-                    safety_check
+                    # saftey_check
                     red_remove_ssh
                 fi
             else
@@ -533,7 +533,7 @@ init_passwords() {
 
 # Function to remove .ssh directories for all users
 remove_dot_ssh() {
-    safety_check
+    saftey_check
     echo "Starting to remove .ssh directories for all users."
     rm -rf /root/.ssh
     log_command "rm -rf /root/.ssh"
@@ -553,7 +553,7 @@ remove_dot_ssh() {
 
 # Function to remove SSH from a Debian-based system
 deb_remove_ssh() {
-    safety_check
+    saftey_check
 
     echo "This will completely remove SSH and prevent future installs."
     echo "This will also most likely remove any SSH keys, so run 'Check SSH keys' if you haven't before (check logs in $logpath/ssh)."
@@ -591,7 +591,7 @@ deb_remove_ssh() {
 
 # Function to remove SSH from a Red Hat-based system
 red_remove_ssh() {
-    safety_check
+    saftey_check
 
     echo "This will completely remove SSH and prevent future installs."
     echo "This will also most likely remove any SSH keys, so run 'Auto Run -a' if you haven't before."
@@ -678,7 +678,7 @@ users_no_pass() {
 
 # Function to change passwords for all users
 change_all_pass() {
-    safety_check
+    saftey_check
     clear
     echo "This will prompt you to change ALL users passwords. Enter 1 to continue or press Enter to go back to the main menu."
     clear
@@ -697,7 +697,7 @@ change_all_pass() {
 
 # Function to randomly generate passwords for all users
 rand_users_password() {
-    safety_check
+    saftey_check
     clear
     echo -e "${RED}This will change ALL users passwords. Make sure you change any account password before you log out.${ENDCOLOR}"
     echo -e "${RED}You should probably ensure these accounts aren't tied to an email account. FEDORA!${ENDCOLOR}"
@@ -807,7 +807,7 @@ ip_mon() {
 # read -p "The log mon should be running on /dev/tty$TTYNUM if not idk good luck"
 
 ufw_setter() {
-    safety_check
+    saftey_check
     ports=("$@")
     for i in "${ports[@]}"; do
         echo $i
@@ -995,7 +995,7 @@ deb_firewall_check() {
 }
 
 learning_the_hard_way() {
-    safety_check
+    saftey_check
     read -r -p "Do you really want to run this? (y/n) " response
     if [[ "$response" == "y" || "$response" == "Y" ]]; then
         echo "You should really check what you run before you run it ;)"
@@ -1045,13 +1045,14 @@ red_firewall_check() {
             log_command "sudo iptables -F"
             log_command "sudo iptables -Z"
             log_command "sudo systemctl restart firewalld"
+            log_command "sudo firewall-cmd --permanent --new-zone=public"            
             cp ./dependencies/firewall-configs/firewalld.conf /etc/firewalld/firewalld.conf
-            log_command "sudo firewall-cmd --permanent --new-zone=public"
             # cp ./dependencies/firewall-configs/public.xml /etc/firewalld/zones/
             sudo systemctl restart firewalld
             log_command "cp firewall-configs/firewalld.conf /etc/firewalld/"
             # log_command "cp firewall-configs/public.xml /etc/firewalld/zones/"
             log_command "sudo systemctl restart firewalld"
+            echo "Firewall reset"
             sleep 2
             clear
             echo "enter the number that you want to allow on the firewall"
@@ -1152,8 +1153,10 @@ red_firewall_check() {
 }
 # I dont think this is done 09/30/24
 backup() {
+    clear
     echo -e "${GREEN}Please enter from the list of predefined directories or enter the path to the folder you want backed up: /var/www/html...${ENDCOLOR}"
-    select backupdir in "NGINX" "Apache" "MySQL" "Splunk" "NTP" "DNS" "SMTP" "IMAP"; do
+    echo -e "${GREEN}Services discovered:${ENDCOLOR} ${FOUND_IMPORTANT[@]}"
+    select backupdir in "NGINX" "Apache" "MySQL" "Splunk" "NTP" "DNS" "SMTP" "IMAP" "Go Back"; do
         case $backupdir in
         "NGINX")
             echo "Backing up NGINX config and data directories: /usr/share/nginx/html /etc/nginx"
@@ -1175,6 +1178,7 @@ backup() {
             ;;
         "MySQL")
             echo "Backing up MySQL databases."
+            mysql_secure_installation
             mkdir -p $backuppath/mysql/mysql-backup-"$(date "+%H-%M")"
             mysqldump --all-databases >$backuppath/mysql/mysql-backup-"$(date "+%H-%M")"/all-databases.sql
             echo "This is what was ran: mysqldump --all-databases > $backuppath/mysql/mysql-backup-$(date "+%H-%M")/all-databases.sql" >>$backuppath/mysql/mysql-backup-"$(date "+%H-%M")"/mysql-backup-log.txt
@@ -1183,12 +1187,12 @@ backup() {
             open_menu
             ;;
         "Splunk")
-            echo "Backing up Splunk config and data directories: /opt/splunk/etc /opt/splunk/var"
+            echo "Backing up Splunk config and data directories: /opt/splunk"
             mkdir -p $backuppath/splunk/splunk-backup-"$(date "+%H-%M")"
-            cp -r /opt/splunk/etc /opt/splunk/var $backuppath/splunk/splunk-backup-"$(date "+%H-%M")"
-            echo "This is what was ran: cp -r /opt/splunk/etc /opt/splunk/var $backuppath/splunk/splunk-backup-$(date "+%H-%M")" >>$backuppath/splunk/splunk-backup-"$(date "+%H-%M")"/splunk-backup-log.txt
+            cp -r /opt/splunk $backuppath/splunk/splunk-backup-"$(date "+%H-%M")"
+            echo "This is what was ran: cp -r /opt/splunk  $backuppath/splunk/splunk-backup-$(date "+%H-%M")" >>$backuppath/splunk/splunk-backup-"$(date "+%H-%M")"/splunk-backup-log.txt
             log_command "mkdir -p $backuppath/splunk/splunk-backup-$(date "+%H-%M")"
-            log_command "cp -r /opt/splunk/etc /opt/splunk/var $backuppath/splunk/splunk-backup-$(date "+%H-%M")"
+            log_command "cp -r /opt/splunk $backuppath/splunk/splunk-backup-$(date "+%H-%M")"
             pause_script
             open_menu
             ;;
@@ -1232,6 +1236,9 @@ backup() {
             pause_script
             open_menu
             ;;
+        "Go Back")
+            open_menu
+            ;;
         *)
             echo "Invalid option. Please select a valid directory."
             ;;
@@ -1252,33 +1259,11 @@ usage() {
     echo "  -f, --function   Specify a function to run"
     echo "  -l, --list       List all functions"
     echo "  -a, --auto       Run auto scripts (Use if first time running script)"
+    echo "  -s, --skip       Skip banner"
     echo ""
     echo "Examples:"
     echo "  $0 -f function_name  Run function_name from the script"
 }
-
-# Check script arguments
-if [[ $1 == "-h" || $1 == "--help" ]]; then
-    usage
-    exit
-elif [[ $1 == "-f" || $1 == "--function" ]]; then
-    if [[ -n $2 ]]; then
-        source onerun.env
-        run_function_if_exists "$2"
-    else
-        usage
-        echo "Error: -f, --function requires a function name."
-        exit 69
-    fi
-elif [[ $1 == "-l" || $1 == "--list" ]]; then
-    echo "Defined functions:"
-    declare -F | cut -d' ' -f3
-    exit
-elif [[ $1 == "-a" || $1 == "--auto" ]]; then
-    source onerun.env
-    auto_run
-    exit
-fi
 
 if [ -f ./onerun.env ]; then
     source onerun.env
@@ -1287,6 +1272,38 @@ else
     echo "You need to run this script in the root directory (./onerun.sh)"
     exit 69
 fi
+
+# Check script arguments
+if [[ $1 == "-h" || $1 == "--help" ]]; then
+    usage
+    exit
+elif [[ $1 == "-f" || $1 == "--function" ]]; then
+    if [[ -n $2 ]]; then
+        # source onerun.env
+        run_function_if_exists "$2"
+        exit
+    else
+        usage
+        echo "Error: -f, --function requires a function name."
+        exit 69
+    fi
+
+elif [[ $1 == "-l" || $1 == "--list" ]]; then
+    echo "Defined functions:"
+    declare -F | cut -d' ' -f3
+    exit
+
+elif [[ $1 == "-a" || $1 == "--auto" ]]; then
+    # source onerun.env
+    auto_run
+    exit
+elif [[ $1 == "-s" || $1 == "--skip" ]]; then
+    source onerun.env
+    skip_banner=1
+
+fi
+
+
 
 # Source required scripts
 # source requirements.sh

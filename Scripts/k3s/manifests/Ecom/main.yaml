@@ -1,0 +1,155 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prestashop-web
+  namespace: prestashop
+  labels:
+    app: prestashop-web
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: prestashop-web
+  template:
+    metadata:
+      labels:
+        app: prestashop-web
+    spec:
+      containers:
+      - image: jpb418/ccdc:prestashop
+        imagePullPolicy: Always      
+        name: prestashop-web
+        # resources:
+        #   requests:
+        #     cpu: "200m"
+        #     memory: "550M"
+        ports:
+        - containerPort: 80
+          name: web
+        # Uncomment and customize these lines if needed:
+        # livenessProbe:
+        #   httpGet:
+        #     path: /_status/healthz
+        #     port: 5000
+        #   initialDelaySeconds: 90
+        #   timeoutSeconds: 10
+        # readinessProbe:
+        #   httpGet:
+        #     path: /_status/healthz
+        #     port: 5000
+        #   initialDelaySeconds: 30
+        #   timeoutSeconds: 10
+        # env:
+        # - name: ENVVARNAME
+        #   value: ENVVARVALUE       
+        # volumeMounts:
+        # - mountPath: /var/www/html
+        #   name: data
+      # volumes:
+      # - name: data
+      #   hostPath:
+      #     path: /home/jpb/onerun/Scripts/k3s/manifests/Ecom/prestashop/psdata
+      #     type: Directory
+
+
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ps-mysql
+  namespace: prestashop 
+  labels:
+    app: ps-mysql
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: ps-mysql
+  template:
+    metadata:
+      labels:
+        app: ps-mysql
+    spec:
+      containers:
+      - image: jpb418/ccdc:prestashop-db
+        imagePullPolicy: Always 
+        name: ps-mysql
+        # resources:
+        #   requests:
+        #     cpu: "400m"
+        #     memory: "1024M"
+        ports:
+        - containerPort: 3306
+          name: ps-mysql
+        # Uncomment and customize these lines if needed:
+        # livenessProbe:
+        #   httpGet:
+        #     path: /_status/healthz
+        #     port: 5000
+        #   initialDelaySeconds: 90
+        #   timeoutSeconds: 10
+        # readinessProbe:
+        #   httpGet:
+        #     path: /_status/healthz
+        #     port: 5000
+        #   initialDelaySeconds: 30
+        #   timeoutSeconds: 10
+        # env:
+        # - name: ENVVARNAME
+        #   value: ENVVARVALUE       
+        # volumeMounts:
+        # - mountPath: /var/lib/mysql
+        #   name: data
+      # volumes:
+      # - name: data
+      #   hostPath:
+      #     path: /home/jpb/onerun/Scripts/k3s/manifests/Ecom/database/db_data
+      #     type: Directory
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ps-mysql
+  namespace: prestashop
+  labels:
+    app: mysql
+spec:
+  selector:
+    app: ps-mysql
+  type:  ClusterIP
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+  # clusterIP: None
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prestashop-web-service
+  namespace: prestashop
+  labels:
+    app: prestashop-web-service
+spec:
+  selector:
+    app: prestashop-web
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+
+
