@@ -1,6 +1,7 @@
 nginx
 apache2
 mysql
+bind
 postgresql
 redis-server
 memcached
